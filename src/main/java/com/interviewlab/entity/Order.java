@@ -6,12 +6,15 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
-@Entity
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
 @Builder
+
+@Entity
+@Table(name = "orders")
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

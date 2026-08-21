@@ -56,9 +56,10 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error("Method Argument Not Valid")
-                .validationErrors(errorMessageMap)
+                .error("VALIDATION_FAILED")
+                .message("Request Validation Failed")
                 .path(httpServletRequest.getRequestURI())
+                .validationErrors(errorMessageMap)
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
 

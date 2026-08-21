@@ -1051,3 +1051,90 @@ GET  /api/orders/{id}
 13. What is the difference between URI and URL?
 14. Where should exception handling happen in a layered Spring Boot application?
 15. What happens when an exception propagates from Service to Controller?
+# STEP 4 — Request Validation
+
+## Objective
+
+Implement request validation at the API boundary so invalid client input is rejected before reaching the Service/Database layer.
+
+## Concepts
+
+* Jakarta Bean Validation
+* `@Valid`
+* `@NotNull`
+* `@NotBlank`
+* `@Email`
+* `@Size`
+* `@Positive`
+* `@PositiveOrZero`
+* `@Min`
+* `@Max`
+* `@Pattern`
+* `@Past`
+* `@Future`
+* Validation error handling
+* `MethodArgumentNotValidException`
+* Global validation exception handling
+* Custom validation
+* Class-level validation
+
+## Validation Flow
+
+```text
+HTTP Request
+    ↓
+@RequestBody
+    ↓
+@Valid
+    ↓
+Bean Validation
+    ↓
+Valid?
+ ┌──┴──┐
+NO    YES
+ ↓      ↓
+400   Service
+       ↓
+     Database
+```
+
+## Important Principle
+
+Validation should happen as early as possible, at the API boundary.
+
+Invalid requests should not unnecessarily reach the Service or Database layer.
+## Learning
+Constraint annotations generally do NOT imply @NotNull.
+
+@NotNull → checks presence
+@NotBlank → checks non-null + non-empty + non-whitespace String
+@NotEmpty → checks non-null + non-empty String/Collection/Map
+
+Value constraints such as:
+@Email
+@Positive
+@Size
+@Min/@Max
+@DecimalMin/@DecimalMax
+
+generally validate the value when it is present.
+
+Therefore, for a mandatory field, combine:
+@NotNull + value constraint
+
+Example:
+@NotNull
+@Positive
+private BigDecimal amount;
+## Interview Questions
+
+* What does `@Valid` do?
+* What is Bean Validation?
+* Difference between `@Valid` and `@Validated`?
+* What is `MethodArgumentNotValidException`?
+* Difference between `@NotNull`, `@NotEmpty` and `@NotBlank`?
+* Why is `@NotBlank` applicable only to character sequences?
+* How does Spring convert validation errors into HTTP responses?
+* How do we implement custom validation?
+* What is class-level validation?
+* Where should validation happen?

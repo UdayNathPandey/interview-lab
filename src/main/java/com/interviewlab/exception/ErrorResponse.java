@@ -17,6 +17,6 @@ public class ErrorResponse {
     private int status; // made it string
     private String error;
     private String message;
-    Map<String,String>  validationErrors;
+    private Map<String,String>  validationErrors;
     private String path;
 }

@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 @Setter
 @Getter
 public class CreateOrderRequest {
-    @NotNull
     @NotBlank
     @Size(min=3,max=50)
     private String customerName;
@@ -22,7 +21,8 @@ public class CreateOrderRequest {
     private String customerEmail;
 
     @NotNull
-    @Positive
-    @Max(1000000)
+//    @PositiveOrZero
+    @DecimalMin(value="0.01")
+    @DecimalMax(value="1000000.00")
     private BigDecimal amount; // updated the DT from double to BigDecimal
 }

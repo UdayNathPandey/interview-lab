@@ -3,6 +3,7 @@ package com.interviewlab.exception;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,5 +17,6 @@ public class ErrorResponse {
     private int status; // made it string
     private String error;
     private String message;
+    Map<String,String>  validationErrors;
     private String path;
 }

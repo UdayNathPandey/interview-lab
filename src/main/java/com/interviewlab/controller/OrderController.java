@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api")
@@ -19,6 +20,7 @@ public class OrderController {
     @PostMapping("/orders")
     public ResponseEntity<OrderResponse>  createOrder(
             @RequestBody // missed it
+                    @Valid
             CreateOrderRequest orderReq)
     {
         OrderResponse orderResponse = orderService.createOrder(orderReq);

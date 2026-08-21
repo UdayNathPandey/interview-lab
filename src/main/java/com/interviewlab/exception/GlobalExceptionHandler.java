@@ -5,8 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
 
 import java.time.LocalDateTime;
+import java.util.*;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -39,5 +42,25 @@ public class GlobalExceptionHandler {
                 .path(httpServletRequest.getRequestURI())
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+                                                                      HttpServletRequest httpServletRequest)
+    {
+        Map<String, String> errorMessageMap = new HashMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(fieldError ->
+                        errorMessageMap.put(fieldError.getField(),fieldError.getDefaultMessage()));
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Method Argument Not Valid")
+                .validationErrors(errorMessageMap)
+                .path(httpServletRequest.getRequestURI())
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+
     }
 }

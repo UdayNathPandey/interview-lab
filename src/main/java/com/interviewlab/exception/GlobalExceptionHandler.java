@@ -5,7 +5,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.interviewlab.dto.ErrorResponse;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +18,7 @@ public class GlobalExceptionHandler {
     )
     {
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timeStamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now())
                 .status(HttpStatus.NOT_FOUND.value())
                 .error("RESOURCE_NOT_FOUND")
                 .message(ex.getMessage())
@@ -33,7 +32,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex, HttpServletRequest httpServletRequest)
     {
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timeStamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("BAD_REQUEST")
                 .message(ex.getMessage())

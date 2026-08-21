@@ -46,7 +46,7 @@ public class OrderServiceImp implements OrderService{
     public OrderResponse getOrderById(Long id){
 
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource Not Found , Bro!!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: "+id));
         // orElseThrow lambda leta h ye miss hua
         return OrderResponse.builder()
                 .id(order.getId())

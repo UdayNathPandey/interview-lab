@@ -696,54 +696,358 @@ POST /api/orders
 
 ## Objective
 
-Implement production-style exception handling instead of returning generic errors or using try-catch in every controller.
+Implement production-style exception handling so that controllers do not need repetitive try-catch blocks.
 
-## Concepts
+---
 
-- Custom Runtime Exception
-- @ControllerAdvice
-- @ExceptionHandler
-- HTTP status codes
-- Standard error response
-- 404 NOT_FOUND
-- 400 BAD_REQUEST
-- Exception propagation
-- Separation of business logic and error handling
+## What I Implemented
 
-## Architecture
+Created:
 
+```text
+exception/
+├── ResourceNotFoundException
+├── BadRequestException
+└── GlobalExceptionHandler
+
+dto/
+└── ErrorResponse
+```
+
+Implemented:
+
+```text
+GET /api/orders/{id}
+```
+
+---
+
+## Request Flow
+
+```text
+Client
+   ↓
 Controller
-↓
+   ↓
 Service
-↓
-Exception thrown
-↓
-@ControllerAdvice
-↓
-@ExceptionHandler
-↓
-Standard Error Response
-
-## Planned Exceptions
-
+   ↓
+Repository
+   ↓
+Optional.empty()
+   ↓
 ResourceNotFoundException
-BadRequestException
+   ↓
+@RestControllerAdvice
+   ↓
+@ExceptionHandler
+   ↓
+ErrorResponse
+   ↓
+404 NOT_FOUND
+```
 
-## Standard Error Response
+---
 
-- timestamp
-- status
-- error
-- message
-- path
+## Custom Exception
+
+Created:
+
+```java
+public class ResourceNotFoundException extends RuntimeException {
+
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+### Why RuntimeException?
+
+`RuntimeException` is an unchecked exception, so callers are not forced to explicitly catch or declare it.
+
+Business/resource-related exceptions can be propagated to the global exception handler.
+
+---
+
+## Global Exception Handler
+
+Used:
+
+```java
+@RestControllerAdvice
+```
+
+with:
+
+```java
+@ExceptionHandler(ResourceNotFoundException.class)
+```
+
+The global handler converts exceptions into a consistent API response.
+
+Example:
+
+```json
+{
+  "timestamp": "...",
+  "status": 404,
+  "error": "RESOURCE_NOT_FOUND",
+  "message": "Order not found with id: 999",
+  "path": "/api/orders/999"
+}
+```
+
+---
+
+## `@RestControllerAdvice`
+
+`@RestControllerAdvice` provides centralized exception handling for REST controllers.
+
+Instead of:
+
+```text
+Controller 1 → try/catch
+Controller 2 → try/catch
+Controller 3 → try/catch
+```
+
+we use:
+
+```text
+All Controllers
+      ↓
+GlobalExceptionHandler
+```
+
+This improves maintainability and separation of concerns.
+
+---
+
+## `@ExceptionHandler`
+
+Example:
+
+```java
+@ExceptionHandler(ResourceNotFoundException.class)
+```
+
+This tells Spring that the method should handle `ResourceNotFoundException`.
+
+---
+
+## URI vs URL
+
+Used:
+
+```java
+request.getRequestURI()
+```
+
+For:
+
+```text
+http://localhost:8080/api/orders/999
+```
+
+URL:
+
+```text
+http://localhost:8080/api/orders/999
+```
+
+URI:
+
+```text
+/api/orders/999
+```
+
+For an API error response, the URI/path is generally more useful.
+
+---
+
+## Optional + `orElseThrow()`
+
+Repository:
+
+```java
+orderRepository.findById(id)
+```
+
+returns:
+
+```text
+Optional<Order>
+```
+
+Used:
+
+```java
+Order order = orderRepository.findById(id)
+        .orElseThrow(() ->
+                new ResourceNotFoundException(
+                        "Order not found with id: " + id));
+```
+
+Flow:
+
+```text
+findById()
+     ↓
+Optional<Order>
+     ↓
+Order exists?
+   /       \
+ YES       NO
+  ↓         ↓
+Order    orElseThrow()
+            ↓
+     ResourceNotFoundException
+```
+
+### Important Learning
+
+Initially I missed that `orElseThrow()` accepts a lambda/Supplier.
+
+```java
+() -> new ResourceNotFoundException(...)
+```
+
+The exception is supplied when the Optional is empty.
+
+---
+
+## HTTP Status Codes
+
+### 404 NOT_FOUND
+
+The request is valid, but the requested resource does not exist.
+
+Example:
+
+```text
+GET /api/orders/999
+```
+
+when order `999` does not exist.
+
+### 400 BAD_REQUEST
+
+The client request itself is invalid.
+
+Examples:
+
+```text
+Invalid input
+Invalid email
+Negative amount
+Invalid business request
+```
+
+### 500 INTERNAL_SERVER_ERROR
+
+Unexpected server-side failure or programming/system error.
+
+---
+
+## Mistakes / Lessons
+
+### 1. Initially considered try-catch inside Controller
+
+Example:
+
+```java
+try {
+    ...
+} catch (RuntimeException ex) {
+    ...
+}
+```
+
+### Lesson
+
+Do not duplicate exception handling in every controller.
+
+Use a centralized `@RestControllerAdvice`.
+
+---
+
+### 2. Initially missed `orElseThrow()` lambda
+
+Correct:
+
+```java
+.orElseThrow(() ->
+        new ResourceNotFoundException(...));
+```
+
+The lambda acts as an exception supplier.
+
+---
+
+### 3. Error response field naming
+
+Prefer:
+
+```java
+private LocalDateTime timestamp;
+```
+
+instead of:
+
+```java
+private LocalDateTime timeStamp;
+```
+
+`timestamp` is the conventional naming.
+
+---
+
+### 4. HTTP status representation
+
+Keep:
+
+```java
+private int status;
+```
+
+so the JSON contains:
+
+```json
+"status": 404
+```
+
+rather than:
+
+```json
+"status": "404"
+```
+
+---
+
+## Current APIs
+
+```text
+GET  /api/health
+POST /api/orders
+GET  /api/orders/{id}
+```
+
+---
 
 ## Interview Questions
 
-- Why use custom exceptions?
-- Why use @ControllerAdvice?
-- @ControllerAdvice vs @RestControllerAdvice?
-- @ExceptionHandler kaise work karta hai?
-- Why shouldn't every controller have try-catch?
-- RuntimeException vs Exception?
-- 400 vs 404 vs 500?
-- Exception propagation Spring MVC mein kaise hoti hai?
+1. What is `@RestControllerAdvice`?
+2. What is the difference between `@ControllerAdvice` and `@RestControllerAdvice`?
+3. How does `@ExceptionHandler` work?
+4. Why shouldn't every controller contain try-catch?
+5. Why extend `RuntimeException`?
+6. What is the difference between checked and unchecked exceptions?
+7. What does `findById()` return?
+8. Why use `Optional`?
+9. How does `orElseThrow()` work?
+10. Why does `orElseThrow()` accept a lambda?
+11. What is a `Supplier`?
+12. What is the difference between 400, 404 and 500?
+13. What is the difference between URI and URL?
+14. Where should exception handling happen in a layered Spring Boot application?
+15. What happens when an exception propagates from Service to Controller?

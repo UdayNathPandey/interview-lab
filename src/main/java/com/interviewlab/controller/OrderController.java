@@ -28,6 +28,8 @@ public class OrderController {
     @GetMapping("/orders/{id}")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable("id") Long id)
     {
+
+        // never put try catch in controller -> bad practice -> that is why RestControllerAdvice aya
 //        try
 //        {
             OrderResponse orderResponse = orderService.getOrderById(id);

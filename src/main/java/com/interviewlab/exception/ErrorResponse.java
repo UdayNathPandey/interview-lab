@@ -1,4 +1,4 @@
-package com.interviewlab.dto;
+package com.interviewlab.exception;
 
 import lombok.*;
 
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class ErrorResponse {
 
     // TSEMP
-    private LocalDateTime timeStamp;
+    private LocalDateTime timestamp;
     private int status; // made it string
     private String error;
     private String message;

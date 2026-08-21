@@ -3,6 +3,7 @@ package com.interviewlab.service;
 import com.interviewlab.dto.CreateOrderRequest;
 import com.interviewlab.dto.OrderResponse;
 import com.interviewlab.entity.OrderStatus;
+import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,7 +43,21 @@ public class OrderServiceImp implements OrderService{
                 .build();
     }
 
-    public Order getOrderById(){return null;}
+    public OrderResponse getOrderById(Long id){
+
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Resource Not Found , Bro!!"));
+        // orElseThrow lambda leta h ye miss hua
+        return OrderResponse.builder()
+                .id(order.getId())
+                .customerName(order.getCustomerName())
+                .customerEmail(order.getCustomerEmail())
+                .amount(order.getAmount())
+                .status(order.getStatus())
+                .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .build();
+    }
 
     public List<Order> getAllOrders(){return null;}
 

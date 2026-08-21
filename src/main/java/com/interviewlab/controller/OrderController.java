@@ -2,13 +2,11 @@ package com.interviewlab.controller;
 
 import com.interviewlab.dto.CreateOrderRequest;
 import com.interviewlab.dto.OrderResponse;
+import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
@@ -27,4 +25,17 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse); // maine phle HttpStatus.OK likha tha
     }
 
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<OrderResponse> getOrder(@PathVariable("id") Long id)
+    {
+//        try
+//        {
+            OrderResponse orderResponse = orderService.getOrderById(id);
+//            return ResponseEntity.status(HttpStatus.OK).body(orderResponse);
+        return ResponseEntity.ok(orderResponse);
+//        }catch (RuntimeException ex) {
+
+//            throw new ResourceNotFoundException("this user is not there in database , bro!!");
+//        }
+    }
 }

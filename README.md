@@ -692,3 +692,58 @@ POST /api/orders
 21. What is the difference between `git add`, `git commit`, and `git push`?
 22. Why did Git ask for user.name and user.email?
 23. Why can an application start even when Hibernate DDL generation has failed?
+# STEP 3 — Custom Exception + Global Exception Handling
+
+## Objective
+
+Implement production-style exception handling instead of returning generic errors or using try-catch in every controller.
+
+## Concepts
+
+- Custom Runtime Exception
+- @ControllerAdvice
+- @ExceptionHandler
+- HTTP status codes
+- Standard error response
+- 404 NOT_FOUND
+- 400 BAD_REQUEST
+- Exception propagation
+- Separation of business logic and error handling
+
+## Architecture
+
+Controller
+↓
+Service
+↓
+Exception thrown
+↓
+@ControllerAdvice
+↓
+@ExceptionHandler
+↓
+Standard Error Response
+
+## Planned Exceptions
+
+ResourceNotFoundException
+BadRequestException
+
+## Standard Error Response
+
+- timestamp
+- status
+- error
+- message
+- path
+
+## Interview Questions
+
+- Why use custom exceptions?
+- Why use @ControllerAdvice?
+- @ControllerAdvice vs @RestControllerAdvice?
+- @ExceptionHandler kaise work karta hai?
+- Why shouldn't every controller have try-catch?
+- RuntimeException vs Exception?
+- 400 vs 404 vs 500?
+- Exception propagation Spring MVC mein kaise hoti hai?

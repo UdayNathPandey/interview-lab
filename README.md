@@ -1502,3 +1502,99 @@ This is a common migration/interview point.
 10. Why should custom validators generally return `true` for null when `@NotNull` handles presence?
 11. Difference between field-level and class-level validation?
 12. How does a custom validation error reach `GlobalExceptionHandler`?
+# STEP 5 — Complete CRUD
+
+## Objective
+
+Complete the Order REST API with:
+
+* GET all orders
+* GET order by ID
+* POST order
+* PUT order
+* PATCH order
+* DELETE order
+
+## REST API
+
+```text
+GET     /api/orders
+GET     /api/orders/{id}
+POST    /api/orders
+PUT     /api/orders/{id}
+PATCH   /api/orders/{id}
+DELETE  /api/orders/{id}
+```
+
+## Important Concepts
+
+* REST CRUD
+* `ResponseEntity`
+* HTTP status codes
+* PUT vs PATCH
+* Idempotency
+* Partial update
+* Resource existence validation
+* DTO separation
+* Reusing `ResourceNotFoundException`
+
+## Expected Status Codes
+
+```text
+POST   → 201 CREATED
+GET    → 200 OK
+PUT    → 200 OK
+PATCH  → 200 OK
+DELETE → 204 NO_CONTENT
+Missing resource → 404 NOT_FOUND
+Invalid request → 400 BAD_REQUEST
+```
+
+## PUT vs PATCH
+
+PUT generally represents replacement/update of the resource representation.
+
+PATCH represents a partial modification of the resource.
+
+Example:
+
+```text
+PUT
+Client sends the complete update representation.
+
+PATCH
+Client sends only the fields that need modification.
+```
+
+## Idempotency
+
+PUT is intended to be idempotent.
+
+Repeating the same PUT request should result in the same final resource state.
+
+PATCH may or may not be idempotent depending on the operation/design.
+
+## Architecture
+
+```text
+Controller
+    ↓
+Validation
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Database
+```
+
+## Interview Questions
+
+* PUT vs PATCH?
+* Is POST idempotent?
+* Is PUT idempotent?
+* Is PATCH idempotent?
+* Why use 204 for DELETE?
+* Should DELETE return the deleted object?
+* What should happen if the resource doesn't exist?
+* Why use DTOs instead of entities?

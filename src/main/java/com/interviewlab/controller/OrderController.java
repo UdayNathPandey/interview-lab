@@ -2,12 +2,14 @@ package com.interviewlab.controller;
 
 import com.interviewlab.dto.CreateOrderRequest;
 import com.interviewlab.dto.OrderResponse;
+import com.interviewlab.dto.UpdateOrderRequest;
 import com.interviewlab.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -40,5 +42,20 @@ public class OrderController {
 
 //            throw new ResourceNotFoundException("this user is not there in database , bro!!");
 //        }
+    }
+
+    @GetMapping("/orders")
+    public ResponseEntity<List<OrderResponse>> getAllOrders()
+    {
+//        List<OrderResponse> allOrders = orderService.getAllOrders();
+        return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
+    @PutMapping("/orders/{id}")
+    public ResponseEntity<OrderResponse> updateOrder(
+            @PathVariable("id")Long id,
+    @Valid @RequestBody UpdateOrderRequest updateOrderRequest) // here I missed @Valid
+    {
+        return ResponseEntity.ok(orderService.updateOrder(id,updateOrderRequest));
     }
 }

@@ -13,6 +13,6 @@ public interface OrderService {
     public List<OrderResponse> getAllOrders();
     public OrderResponse updateOrder(Long id ,UpdateOrderRequest updateOrderRequest);
     public OrderResponse patchOrder(Long id, PatchOrderRequest patchOrderRequest);
-    public Void deleteOrder(Long id);
+    public void deleteOrder(Long id);
 
 }

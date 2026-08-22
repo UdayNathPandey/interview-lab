@@ -21,6 +21,10 @@ public class CreateOrderRequest {
 
     @NotNull
     @Email
+//    @Pattern(
+//            regexp="^[a-zA-Z ]+$",
+//            message="Name can contain only alphabets and spaces"
+//    )
     private String customerEmail;
 
     @NotNull

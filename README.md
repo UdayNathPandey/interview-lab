@@ -1598,3 +1598,412 @@ Database
 * Should DELETE return the deleted object?
 * What should happen if the resource doesn't exist?
 * Why use DTOs instead of entities?
+# STEP 5 — Full CRUD
+
+## Objective
+
+Completed complete CRUD operations for Order.
+
+```text
+POST   /api/orders
+GET    /api/orders
+GET    /api/orders/{id}
+PUT    /api/orders/{id}
+PATCH  /api/orders/{id}
+DELETE /api/orders/{id}
+```
+
+---
+
+## HTTP Status Codes
+
+```text
+POST   → 201 CREATED
+GET    → 200 OK
+PUT    → 200 OK
+PATCH  → 200 OK
+DELETE → 204 NO_CONTENT
+```
+
+Missing resource:
+
+```text
+404 NOT_FOUND
+```
+
+Invalid request:
+
+```text
+400 BAD_REQUEST
+```
+
+---
+
+## GET All + Stream API
+
+Initially considered a traditional `for` loop.
+
+Then implemented:
+
+```java
+orderRepository.findAll()
+        .stream()
+        .map(...)
+        .toList();
+```
+
+### Learning
+
+```text
+stream()
+    ↓
+map()
+    ↓
+transform Entity → DTO
+    ↓
+toList()
+```
+
+`Stream.toList()` was introduced in Java 16.
+
+Before Java 16, common syntax was:
+
+```java
+.collect(Collectors.toList())
+```
+
+---
+
+## Entity vs DTO
+
+The API does not directly expose the JPA Entity.
+
+```text
+Database
+   ↓
+Order Entity
+   ↓
+Service
+   ↓
+OrderResponse DTO
+   ↓
+Controller
+   ↓
+Client
+```
+
+This keeps persistence models separated from API contracts.
+
+---
+
+## PUT
+
+Implemented:
+
+```text
+PUT /api/orders/{id}
+```
+
+PUT uses `UpdateOrderRequest` where required fields are validated.
+
+Typical representation:
+
+```json
+{
+  "customerName": "Uday",
+  "customerEmail": "uday@gmail.com",
+  "amount": 3000,
+  "discount": 100,
+  "status": "CONFIRMED"
+}
+```
+
+PUT represents a complete update/replacement-style operation.
+
+---
+
+## PATCH
+
+Implemented:
+
+```text
+PATCH /api/orders/{id}
+```
+
+PATCH uses `PatchOrderRequest` where fields are optional.
+
+Example:
+
+```json
+{
+  "amount": 3000
+}
+```
+
+Only the supplied field is updated.
+
+### Important Difference
+
+```text
+PUT
+→ complete representation/update
+
+PATCH
+→ partial modification
+```
+
+---
+
+## PUT vs PATCH Validation
+
+PUT:
+
+```text
+@NotNull
+@NotBlank
+...
+```
+
+required fields.
+
+PATCH:
+
+```text
+@Email
+@Size
+@DecimalMin
+...
+```
+
+without presence constraints, because omitted fields should remain unchanged.
+
+---
+
+## DELETE
+
+Implemented:
+
+```text
+DELETE /api/orders/{id}
+```
+
+Successful deletion returns:
+
+```text
+204 NO_CONTENT
+```
+
+Controller:
+
+```java
+orderService.deleteOrder(id);
+return ResponseEntity.noContent().build();
+```
+
+### `void` vs `Void`
+
+Initially used:
+
+```java
+Void deleteOrder()
+```
+
+and returned:
+
+```java
+return null;
+```
+
+Learning:
+
+```text
+void
+→ method returns nothing
+
+Void
+→ reference type representing absence of a value
+```
+
+For a normal service method with no return value, prefer:
+
+```java
+void deleteOrder(Long id)
+```
+
+---
+
+## Resource Not Found
+
+PUT, PATCH and DELETE first verify that the order exists.
+
+```java
+orderRepository.findById(id)
+        .orElseThrow(() ->
+                new ResourceNotFoundException(...));
+```
+
+Therefore:
+
+```text
+PUT/PATCH/DELETE non-existing ID
+        ↓
+ResourceNotFoundException
+        ↓
+GlobalExceptionHandler
+        ↓
+404
+```
+
+---
+
+## Mistakes / Lessons
+
+### 1. Forgot `@Valid` on PUT
+
+Without:
+
+```java
+@Valid @RequestBody
+```
+
+Bean Validation does not run for the request DTO.
+
+Correct:
+
+```java
+@Valid @RequestBody UpdateOrderRequest request
+```
+
+---
+
+### 2. Initially used 200 for POST
+
+Changed:
+
+```text
+200 OK
+```
+
+to:
+
+```text
+201 CREATED
+```
+
+because POST successfully created a new resource.
+
+---
+
+### 3. Initially used `200 OK` for DELETE
+
+Changed:
+
+```text
+200 OK
+```
+
+to:
+
+```text
+204 NO_CONTENT
+```
+
+because successful DELETE does not need to return a response body.
+
+---
+
+### 4. Initially used a `for` loop for GET all
+
+Later realized collection transformation is a good use case for Stream API.
+
+Implemented:
+
+```java
+.stream()
+.map(...)
+.toList()
+```
+
+---
+
+### 5. Initially didn't know `Void` requires `null`
+
+Learning:
+
+Prefer `void` for methods that don't return a value.
+
+---
+
+## Important PATCH Limitation
+
+Current PATCH implementation uses:
+
+```java
+if (request.getAmount() != null) {
+    ...
+}
+```
+
+Therefore:
+
+```text
+field omitted
+```
+
+and:
+
+```text
+field explicitly set to null
+```
+
+cannot be distinguished.
+
+This is acceptable for the current learning implementation.
+
+Advanced PATCH semantics can later be explored using JSON Patch / JSON Merge Patch.
+
+---
+
+## Business Validation Observation
+
+`@ValidOrderDiscount` works well for DTO-level validation when both values are present in the request.
+
+For PATCH, a rule such as:
+
+```text
+discount < existingOrder.amount
+```
+
+may require Service/business-layer validation because the current database value may not be included in the PATCH request.
+
+Important principle:
+
+```text
+Bean Validation
+→ request/input validation
+
+Service/business validation
+→ rules involving existing state/business context
+```
+
+---
+
+## Interview Questions
+
+1. What are the CRUD HTTP methods?
+2. Why POST returns 201?
+3. Why DELETE commonly returns 204?
+4. PUT vs PATCH?
+5. Is PUT idempotent?
+6. Is POST idempotent?
+7. Is PATCH idempotent?
+8. Why shouldn't entities be directly exposed from REST APIs?
+9. Why use DTOs?
+10. What is `Stream.map()`?
+11. When was `Stream.toList()` introduced?
+12. `Collectors.toList()` vs `Stream.toList()`?
+13. `void` vs `Void`?
+14. How do you handle DELETE of a non-existing resource?
+15. Why is `@Valid` required on `@RequestBody`?
+16. How would you implement PATCH when `null` has semantic meaning?
+17. Which validations belong to Bean Validation vs Service layer?

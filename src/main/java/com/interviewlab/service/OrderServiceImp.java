@@ -5,35 +5,40 @@ import com.interviewlab.dto.OrderResponse;
 import com.interviewlab.dto.PatchOrderRequest;
 import com.interviewlab.dto.UpdateOrderRequest;
 import com.interviewlab.entity.OrderStatus;
-import com.interviewlab.exception.BadRequestException;
 import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.OrderRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.interviewlab.entity.Order;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class OrderServiceImp implements OrderService{
 
-    @Autowired
-    OrderRepository orderRepository;
+//    @Autowired // recommended to use constructor injection in production
+    private final OrderRepository orderRepository;
+ // instead of writing constructor -> using @RequiredArgsConstructor
+//    public OrderServiceImp(OrderRepository orderRepository)
+//    {
+//        this.orderRepository=orderRepository;
+//    }
 
     @Override
     public OrderResponse createOrder(CreateOrderRequest orderRequestDto) {
 
         // name, email and amount
+        LocalDateTime now = LocalDateTime.now(); // agr create and update me ye function likhenge to time difference ho skta h
         Order order = Order
                 .builder()
                 .customerName(orderRequestDto.getCustomerName())
                 .customerEmail(orderRequestDto.getCustomerEmail())
                 .amount(orderRequestDto.getAmount())
                 .status(OrderStatus.PENDING) // missed it
-                .createdAt(LocalDateTime.now()) // missed it
-                .updatedAt(LocalDateTime.now()) // missed it
+                .createdAt(now) // missed it
+                .updatedAt(now) // missed it
                 .build();
         Order orderCreated = orderRepository.save(order);
 
@@ -170,12 +175,13 @@ public class OrderServiceImp implements OrderService{
     }
 
     @Override
-    public Void deleteOrder(Long id){
+    public void deleteOrder(Long id){
         Order fetchOrder = orderRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Order not found with id "+id));
         orderRepository.delete(fetchOrder);
 
-        return null; // Void k liye null return krte h ye nhi pta tha
+//        return null; // Void k liye null return krte h ye nhi pta tha
+        // production me void recommended h
     }
 
 

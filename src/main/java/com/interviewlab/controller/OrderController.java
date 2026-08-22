@@ -5,6 +5,7 @@ import com.interviewlab.dto.OrderResponse;
 import com.interviewlab.dto.PatchOrderRequest;
 import com.interviewlab.dto.UpdateOrderRequest;
 import com.interviewlab.service.OrderService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -14,10 +15,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class OrderController {
 
-    @Autowired
-    OrderService orderService;
+//    @Autowired // we will use construtor injection instead of field autowiring
+    private final OrderService orderService;
+
+//    public OrderController(OrderService orderService)
+//    {
+//        this.orderService=orderService;
+//    }
 
     @PostMapping("/orders")
     public ResponseEntity<OrderResponse>  createOrder(

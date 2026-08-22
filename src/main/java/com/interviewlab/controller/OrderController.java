@@ -2,7 +2,6 @@ package com.interviewlab.controller;
 
 import com.interviewlab.dto.CreateOrderRequest;
 import com.interviewlab.dto.OrderResponse;
-import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;

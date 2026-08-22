@@ -1,6 +1,7 @@
 package com.interviewlab.dto;
 
-import jakarta.validation.constraints.*;
+import com.interviewlab.validation.ValidOrderDiscount;
+import jakarta.validation.constraints.*; // ye package mai recall nhi kr paya
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Setter
 @Getter
+
+@ValidOrderDiscount
 public class CreateOrderRequest {
     @NotBlank
     @Size(min=3,max=50)
@@ -25,4 +28,9 @@ public class CreateOrderRequest {
     @DecimalMin(value="0.01")
     @DecimalMax(value="1000000.00")
     private BigDecimal amount; // updated the DT from double to BigDecimal
+
+    // business rule : discount < amount
+    @NotNull
+    @DecimalMin("0.00")
+    private BigDecimal discount;
 }

@@ -1138,3 +1138,367 @@ private BigDecimal amount;
 * How do we implement custom validation?
 * What is class-level validation?
 * Where should validation happen?
+# STEP 4 — PART 2: Custom / Class-Level Validation
+
+## Objective
+
+Implement custom validation for business rules that cannot be validated by a single field.
+
+## Why Custom Validation?
+
+Standard annotations can validate individual fields:
+
+```text id="a8f2bc"
+@NotBlank
+@Email
+@Positive
+@Size
+@DecimalMin
+@DecimalMax
+```
+
+But some business rules involve multiple fields.
+
+Examples:
+
+```text id="i5q4e8"
+startDate < endDate
+password == confirmPassword
+minimumAmount <= maximumAmount
+discount < orderAmount
+```
+
+These require class-level validation.
+
+## Architecture
+
+```text id="h5t9e3"
+DTO
+ ↓
+Custom Annotation
+ ↓
+ConstraintValidator
+ ↓
+Business validation
+ ↓
+Validation Result
+ ↓
+MethodArgumentNotValidException
+ ↓
+GlobalExceptionHandler
+ ↓
+400 BAD_REQUEST
+```
+
+## Important Concepts
+
+* Custom Constraint Annotation
+* `@Constraint`
+* `ConstraintValidator`
+* `isValid()`
+* Class-level validation
+* `ConstraintValidatorContext`
+* `@Target`
+* `@Retention`
+* `validatedBy`
+
+## Interview Questions
+
+* Why do we need custom validation?
+* What is `ConstraintValidator`?
+* Difference between field-level and class-level validation?
+* What does `@Constraint(validatedBy = ...)` do?
+* What is `ConstraintValidatorContext`?
+* Why is `isValid()` returning boolean?
+* How does Spring discover custom validation annotations?
+## STEP 4 — PART 2: Custom / Class-Level Validation
+
+### Why Custom Validation?
+
+Standard constraints validate individual values:
+
+```text id="m7k2p4"
+@NotBlank
+@Email
+@Positive
+@DecimalMin
+@DecimalMax
+```
+
+But business rules may depend on multiple fields.
+
+Example:
+
+```text id="q3v8n1"
+discount < amount
+```
+
+This cannot be expressed cleanly using a single standard field-level annotation.
+
+---
+
+### Custom Validation Architecture
+
+```text id="h4m9s2"
+@ValidOrderDiscount
+        ↓
+OrderDiscountValidator
+        ↓
+ConstraintValidator
+        ↓
+isValid()
+        ↓
+true / false
+```
+
+---
+
+### Custom Annotation
+
+Created:
+
+```java id="x8q2m5"
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = OrderDiscountValidator.class)
+@Documented
+public @interface ValidOrderDiscount {
+
+    String message() default "Discount must be less than amount";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+}
+```
+
+---
+
+### Annotation Meta-Annotations
+
+#### `@Target(ElementType.TYPE)`
+
+The custom annotation can be applied to a class/type.
+
+Required because the validation compares multiple fields.
+
+#### `@Retention(RetentionPolicy.RUNTIME)`
+
+The annotation remains available at runtime so the validation framework can inspect it.
+
+#### `@Constraint(validatedBy = ...)`
+
+Connects the custom annotation with its validation implementation.
+
+```text id="q5n7r2"
+@ValidOrderDiscount
+       ↓
+OrderDiscountValidator
+```
+
+#### `@Documented`
+
+Controls whether usage of the annotation is included in generated JavaDoc.
+
+It is NOT required for validation.
+
+---
+
+### ConstraintValidator
+
+Implemented:
+
+```java id="n6p3k8"
+ConstraintValidator<ValidOrderDiscount, CreateOrderRequest>
+```
+
+Meaning:
+
+```text id="w9m4q1"
+ValidOrderDiscount
+       ↓
+validates
+       ↓
+CreateOrderRequest
+```
+
+`isValid()` returns:
+
+```text id="b2k7v5"
+true  → validation passes
+false → validation fails
+```
+
+---
+
+### Null Handling
+
+Custom validator does not need to enforce null checks when fields already have:
+
+```java id="c8r2m6"
+@NotNull
+```
+
+Therefore:
+
+```java id="p7n3q9"
+if (request == null) return true;
+
+if (amount == null || discount == null) return true;
+```
+
+The custom validator focuses on the cross-field business rule.
+
+---
+
+### `BigDecimal.compareTo()`
+
+For:
+
+```text id="j4m8v2"
+discount < amount
+```
+
+use:
+
+```java id="y6q3p9"
+discount.compareTo(amount) < 0
+```
+
+Do not use `<` / `>` operators with `BigDecimal`.
+
+`compareTo()` returns:
+
+```text id="f2n7k4"
+negative → first value is smaller
+zero     → values are equal
+positive → first value is greater
+```
+
+---
+
+### `ConstraintValidatorContext`
+
+A class-level validation error does not automatically belong to a particular field.
+
+To associate the error with `discount`:
+
+```java id="z5m8q3"
+context.disableDefaultConstraintViolation();
+
+context.buildConstraintViolationWithTemplate(
+        context.getDefaultConstraintMessageTemplate()
+)
+.addPropertyNode("discount")
+.addConstraintViolation();
+```
+
+This allows the global exception handler to produce:
+
+```json id="r7p2m9"
+{
+  "validationErrors": {
+    "discount": "Discount must be less than amount"
+  }
+}
+```
+
+---
+
+### Three Validation Layers
+
+```text id="k8m3q5"
+1. Presence Validation
+   @NotNull
+   @NotBlank
+   @NotEmpty
+
+2. Value Validation
+   @Email
+   @Size
+   @Positive
+   @DecimalMin
+   @DecimalMax
+
+3. Business / Cross-field Validation
+   @ValidOrderDiscount
+   ConstraintValidator
+```
+
+---
+
+### Mistake / Learning
+
+Initially the validator was adding a constraint violation before checking whether the data was valid.
+
+Incorrect flow:
+
+```text id="g4q8m2"
+Add violation
+    ↓
+Check validity
+```
+
+Correct flow:
+
+```text id="v6n2p9"
+Check validity
+    ↓
+Valid → return true
+
+Invalid
+    ↓
+Add violation
+    ↓
+return false
+```
+
+This is important because adding a violation manually can make even valid input fail validation.
+
+---
+
+### `@Documented` Learning
+
+`@Documented` has no effect on validation logic.
+
+It controls whether the annotation is included in generated JavaDoc.
+
+```text id="m9q3r6"
+@Retention → runtime availability
+@Documented → JavaDoc documentation
+```
+
+---
+
+### Jakarta Validation Package
+
+Spring Boot 4 uses:
+
+```java id="y3p7n1"
+jakarta.validation.*
+```
+
+Older Spring applications may use:
+
+```java id="s8m4q2"
+javax.validation.*
+```
+
+This is a common migration/interview point.
+
+---
+
+### Interview Questions
+
+1. Why do we need custom validation?
+2. What is `ConstraintValidator`?
+3. What does `@Constraint` do?
+4. Why use `@Target(TYPE)`?
+5. What does `@Retention(RUNTIME)` mean?
+6. What does `@Documented` do?
+7. What is `ConstraintValidatorContext`?
+8. Why use `addPropertyNode()`?
+9. Why use `BigDecimal.compareTo()`?
+10. Why should custom validators generally return `true` for null when `@NotNull` handles presence?
+11. Difference between field-level and class-level validation?
+12. How does a custom validation error reach `GlobalExceptionHandler`?

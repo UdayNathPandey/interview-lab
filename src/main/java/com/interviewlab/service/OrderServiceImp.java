@@ -2,8 +2,10 @@ package com.interviewlab.service;
 
 import com.interviewlab.dto.CreateOrderRequest;
 import com.interviewlab.dto.OrderResponse;
+import com.interviewlab.dto.PatchOrderRequest;
 import com.interviewlab.dto.UpdateOrderRequest;
 import com.interviewlab.entity.OrderStatus;
+import com.interviewlab.exception.BadRequestException;
 import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ public class OrderServiceImp implements OrderService{
     @Autowired
     OrderRepository orderRepository;
 
+    @Override
     public OrderResponse createOrder(CreateOrderRequest orderRequestDto) {
 
         // name, email and amount
@@ -45,6 +48,7 @@ public class OrderServiceImp implements OrderService{
                 .build();
     }
 
+    @Override
     public OrderResponse getOrderById(Long id){
 
         Order order = orderRepository.findById(id)
@@ -61,6 +65,7 @@ public class OrderServiceImp implements OrderService{
                 .build();
     }
 
+    @Override
     public List<OrderResponse> getAllOrders()
     {
 //        List<Order> allOrders = orderRepository.findAll();
@@ -93,6 +98,7 @@ public class OrderServiceImp implements OrderService{
                 ).toList(); // toList() belongs to 16+
     }
 
+    @Override
     public OrderResponse updateOrder(Long id, UpdateOrderRequest updateOrderRequest)
     {
         //check if requested user exist or not
@@ -121,7 +127,56 @@ public class OrderServiceImp implements OrderService{
                 .build();
     }
 
-    public Order deleteOrder(){return null;}
+    @Override
+    public OrderResponse patchOrder(Long id , PatchOrderRequest patchOrderRequest)
+    {
+        //check if user exits
+        Order fetchedOrder = orderRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Order not found with id "+id));
+        //update the user
+        if (patchOrderRequest.getCustomerName() != null) {
+            fetchedOrder.setCustomerName(patchOrderRequest.getCustomerName());
+        }
+
+        if (patchOrderRequest.getCustomerEmail() != null) {
+            fetchedOrder.setCustomerEmail(patchOrderRequest.getCustomerEmail());
+        }
+
+        if (patchOrderRequest.getAmount() != null) {
+            fetchedOrder.setAmount(patchOrderRequest.getAmount());
+        }
+
+        if (patchOrderRequest.getDiscount() != null) {
+            fetchedOrder.setDiscount(patchOrderRequest.getDiscount());
+        }
+
+        if (patchOrderRequest.getStatus() != null) {
+            fetchedOrder.setStatus(patchOrderRequest.getStatus());
+        }
+        fetchedOrder.setUpdatedAt(LocalDateTime.now());
+        // save the user
+        Order patchedOrder=   orderRepository.save(fetchedOrder);
+        // return orderResponse
+        return OrderResponse.builder()
+                .id(patchedOrder.getId())
+                .customerName(patchedOrder.getCustomerName())
+                .customerEmail(patchedOrder.getCustomerEmail())
+                .amount(patchedOrder.getAmount())
+                .discount(patchedOrder.getDiscount())
+                .status(patchedOrder.getStatus())
+                .createdAt(patchedOrder.getCreatedAt())
+                .updatedAt(patchedOrder.getUpdatedAt())
+                .build();
+    }
+
+    @Override
+    public Void deleteOrder(Long id){
+        Order fetchOrder = orderRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Order not found with id "+id));
+        orderRepository.delete(fetchOrder);
+
+        return null; // Void k liye null return krte h ye nhi pta tha
+    }
 
 
 

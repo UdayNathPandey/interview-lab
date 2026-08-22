@@ -2,6 +2,7 @@ package com.interviewlab.controller;
 
 import com.interviewlab.dto.CreateOrderRequest;
 import com.interviewlab.dto.OrderResponse;
+import com.interviewlab.dto.PatchOrderRequest;
 import com.interviewlab.dto.UpdateOrderRequest;
 import com.interviewlab.service.OrderService;
 import org.springframework.http.ResponseEntity;
@@ -57,5 +58,23 @@ public class OrderController {
     @Valid @RequestBody UpdateOrderRequest updateOrderRequest) // here I missed @Valid
     {
         return ResponseEntity.ok(orderService.updateOrder(id,updateOrderRequest));
+    }
+
+    @PatchMapping("/orders/{id}")
+    public ResponseEntity<OrderResponse> patchOrder(
+
+            @PathVariable("id") Long id,
+            @RequestBody @Valid PatchOrderRequest patchOrderRequest
+            )
+    {
+        return ResponseEntity.ok(orderService.patchOrder(id,patchOrderRequest));
+    }
+
+    @DeleteMapping("/orders/{id}")
+    public ResponseEntity<Void> deleteOrder( @PathVariable("id") Long id)
+    {
+//        return ResponseEntity.ok(orderService.deleteOrder(id)); // I did this
+        orderService.deleteOrder(id);
+        return ResponseEntity.noContent().build(); // 204 status
     }
 }

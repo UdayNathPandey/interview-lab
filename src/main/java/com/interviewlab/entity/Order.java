@@ -20,22 +20,40 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(
+            name="customer_name",
+            nullable=false,
+            length=50
+    )
     private String customerName;
+    @Column(
+            name="customer_email",
+            nullable=false,
+            length=50
+    )
     private String customerEmail;
 //    private Double amount;
 //    Double → floating-point representation
 //       → precision problems
     // production me BigDecimal use krna better h
-    @Column(precision=15, scale=2) // did not know this
+    @Column(name="amount",
+            nullable=false,
+            precision=15, scale=2) // did not know this
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
-
+    @Column(nullable=false)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    @Column(
+            name="discount",
+            nullable=false,
+            precision = 15,
+            scale=2
+    )
     private BigDecimal discount;
 
-    
+
 
 }

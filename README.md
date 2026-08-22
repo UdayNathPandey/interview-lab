@@ -2007,3 +2007,319 @@ Service/business validation
 15. Why is `@Valid` required on `@RequestBody`?
 16. How would you implement PATCH when `null` has semantic meaning?
 17. Which validations belong to Bean Validation vs Service layer?
+# STEP 6 — JPA / Database Deep Dive
+
+## Objective
+
+Understand how Spring Data JPA + Hibernate interact with the database.
+
+## Topics
+
+1. Entity mapping
+2. @Table / @Column
+3. Primary key generation
+4. Enum mapping
+5. @Temporal / Java date-time mapping
+6. Entity relationships
+    - @OneToOne
+    - @OneToMany
+    - @ManyToOne
+    - @ManyToMany
+7. Fetch strategies
+    - LAZY
+    - EAGER
+8. Persistence Context
+9. Entity lifecycle
+10. Dirty Checking
+11. @Transactional
+12. Commit / Rollback
+13. Transaction propagation
+14. Isolation levels
+15. Cascade
+16. orphanRemoval
+17. N+1 query problem
+18. Fetch Join
+19. EntityGraph
+20. Optimistic / Pessimistic locking
+
+## Current Database
+
+MySQL
+
+## Current ORM
+
+Spring Data JPA + Hibernate
+
+## Important Interview Goal
+
+Don't just learn annotations.
+
+Understand:
+
+Java Entity
+↓
+Persistence Context
+↓
+Hibernate
+↓
+SQL
+↓
+MySQL
+
+and how changes to an Entity become database changes.
+## STEP 6.1 — Entity Mapping
+
+### @Entity
+Marks a Java class as a JPA persistent entity.
+
+### @Table
+Explicitly defines the database table name.
+
+@Entity
+@Table(name = "orders")
+
+### @Column
+
+Used to control database column mapping.
+
+@Column(
+name = "customer_name",
+nullable = false,
+length = 50
+)
+
+Result:
+
+customer_name varchar(50) NOT NULL
+
+### precision / scale
+
+For BigDecimal:
+
+precision = total number of digits
+scale = number of digits after decimal
+
+Example:
+
+precision = 15
+scale = 2
+
+→ DECIMAL(15,2)
+
+Useful for monetary values.
+
+### @Enumerated(EnumType.STRING)
+
+Stores enum names instead of ordinal numbers.
+
+Prefer:
+
+PENDING
+CONFIRMED
+CANCELLED
+
+over:
+
+0
+1
+2
+
+because adding/reordering enum constants can make ordinal persistence unsafe.
+
+### GenerationType.IDENTITY
+
+With MySQL:
+
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+
+maps naturally to:
+
+AUTO_INCREMENT
+
+### @NotNull vs @Column(nullable=false)
+
+@NotNull
+→ application/request validation
+
+@Column(nullable=false)
+→ database schema constraint
+
+Both can be useful.
+
+### ddl-auto=update
+
+Hibernate can attempt to synchronize entity changes with an existing schema.
+
+Useful for development.
+
+Do NOT rely on ddl-auto=update as the production database migration strategy.
+
+Production normally uses migration tools such as Flyway/Liquibase.
+
+### Experiment
+
+Changing:
+
+customer_name varchar(255) NULL
+↓
+@Column(length=50, nullable=false)
+↓
+customer_name varchar(50) NOT NULL
+
+Changing:
+
+discount decimal(38,2)
+↓
+precision=15, scale=2
+↓
+discount decimal(15,2)
+
+Changing:
+
+GenerationType.AUTO
+↓
+GenerationType.IDENTITY
+↓
+AUTO_INCREMENT
+
+### Mistake / Learning
+
+Initially did not know precision and scale.
+
+Initially used AUTO generation strategy.
+
+Learned to inspect actual DB schema using:
+
+DESC orders;
+
+and:
+
+SHOW CREATE TABLE orders;
+## STEP 6.1 — Entity Mapping
+
+### @Entity
+Marks a Java class as a JPA persistent entity.
+
+### @Table
+Explicitly defines the database table name.
+
+@Entity
+@Table(name = "orders")
+
+### @Column
+
+Used to control database column mapping.
+
+@Column(
+name = "customer_name",
+nullable = false,
+length = 50
+)
+
+Result:
+
+customer_name varchar(50) NOT NULL
+
+### precision / scale
+
+For BigDecimal:
+
+precision = total number of digits
+scale = number of digits after decimal
+
+Example:
+
+precision = 15
+scale = 2
+
+→ DECIMAL(15,2)
+
+Useful for monetary values.
+
+### @Enumerated(EnumType.STRING)
+
+Stores enum names instead of ordinal numbers.
+
+Prefer:
+
+PENDING
+CONFIRMED
+CANCELLED
+
+over:
+
+0
+1
+2
+
+because adding/reordering enum constants can make ordinal persistence unsafe.
+
+### GenerationType.IDENTITY
+
+With MySQL:
+
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+
+maps naturally to:
+
+AUTO_INCREMENT
+
+### @NotNull vs @Column(nullable=false)
+
+@NotNull
+→ application/request validation
+
+@Column(nullable=false)
+→ database schema constraint
+
+Both can be useful.
+
+### ddl-auto=update
+
+Hibernate can attempt to synchronize entity changes with an existing schema.
+
+Useful for development.
+
+Do NOT rely on ddl-auto=update as the production database migration strategy.
+
+Production normally uses migration tools such as Flyway/Liquibase.
+
+### Experiment
+
+Changing:
+
+customer_name varchar(255) NULL
+↓
+@Column(length=50, nullable=false)
+↓
+customer_name varchar(50) NOT NULL
+
+Changing:
+
+discount decimal(38,2)
+↓
+precision=15, scale=2
+↓
+discount decimal(15,2)
+
+Changing:
+
+GenerationType.AUTO
+↓
+GenerationType.IDENTITY
+↓
+AUTO_INCREMENT
+
+### Mistake / Learning
+
+Initially did not know precision and scale.
+
+Initially used AUTO generation strategy.
+
+Learned to inspect actual DB schema using:
+
+DESC orders;
+
+and:
+
+SHOW CREATE TABLE orders;

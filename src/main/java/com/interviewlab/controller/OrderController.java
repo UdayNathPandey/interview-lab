@@ -99,4 +99,10 @@ public class OrderController {
         orderService.testDirtyChecking(id);
         return ResponseEntity.ok("Dirty checking test completed");
     }
+    @PostMapping("/test/detach-checking/{id}")
+    public ResponseEntity<String> testDetachedEntity(@PathVariable Long id)
+    {
+        orderService.testDetachedEntity(id);
+        return ResponseEntity.ok("Dirty checking test completed");
+    }
 }

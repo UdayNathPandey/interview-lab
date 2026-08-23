@@ -10,6 +10,8 @@ import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.CustomerRepository;
 import com.interviewlab.repository.OrderRepository;
 //import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -234,6 +236,30 @@ public class OrderServiceImp implements OrderService{
 
         System.out.println(
                 "After = " + order.getAmount());
+    }
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Transactional
+    public void testDetachedEntity(Long id) {
+
+        Order order = orderRepository.findById(id)
+                .orElseThrow();
+
+        System.out.println(
+                "Before detach = "
+                        + entityManager.contains(order)
+        );
+
+        entityManager.detach(order);
+
+        System.out.println(
+                "After detach = "
+                        + entityManager.contains(order)
+        );
+
+        order.setAmount(new BigDecimal("1111.00"));
     }
 
 }

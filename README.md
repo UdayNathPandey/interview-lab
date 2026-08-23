@@ -3174,3 +3174,283 @@ Agar tum @Transactional hata doge, toh dirty checking kaam nahi karegi aur datab
 13. What happens when a detached entity is modified?
 14. What happens when a transient entity is referenced by a persistent entity?
 15. What is the difference between Persistence Context and database?
+# STEP 6.3 — Persistence Context + Entity Lifecycle
+
+## Persistence Context
+
+Persistence Context is the JPA/Hibernate context that manages and tracks entity instances.
+
+It provides:
+
+- Entity management
+- Entity identity
+- Dirty checking
+- First-level cache
+- Unit-of-work behavior
+
+
+## Entity Lifecycle
+
+TRANSIENT
+↓
+persist/save
+↓
+MANAGED
+↓
+detach / persistence context closes
+↓
+DETACHED
+
+MANAGED
+↓
+remove/delete
+↓
+REMOVED
+
+
+## 1. TRANSIENT
+
+Example:
+
+Customer customer = new Customer();
+
+The entity is newly created and is not managed by the Persistence Context.
+
+Usually no database row exists yet.
+
+
+## 2. MANAGED / PERSISTENT
+
+An entity associated with the active Persistence Context.
+
+Example:
+
+Order order = orderRepository.findById(id)
+.orElseThrow();
+
+Inside an active transaction, the returned Order is managed.
+
+Hibernate tracks changes to managed entities.
+
+
+## 3. DETACHED
+
+An entity that was previously managed but is no longer associated with the Persistence Context.
+
+Example:
+
+entityManager.detach(order);
+
+After detach:
+
+entityManager.contains(order) == false
+
+Changes to the detached object are not automatically tracked by Hibernate.
+
+
+## 4. REMOVED
+
+A managed entity marked for deletion.
+
+repository.delete(entity)
+
+Conceptually:
+
+MANAGED
+↓
+REMOVED
+↓
+flush
+↓
+DELETE SQL
+
+
+# Dirty Checking
+
+Dirty checking is Hibernate's mechanism for detecting changes in managed entities.
+
+Example:
+
+@Transactional
+public void updateOrder(Long id) {
+
+    Order order = orderRepository.findById(id)
+            .orElseThrow();
+
+    order.setAmount(new BigDecimal("7777.00"));
+
+    // No save() required here
+}
+
+Flow:
+
+findById()
+↓
+MANAGED entity
+↓
+setAmount()
+↓
+Dirty Checking
+↓
+flush
+↓
+UPDATE SQL
+↓
+COMMIT
+
+
+## Hands-On Experiment
+
+Initial amount:
+
+1000.00
+
+Changed Java entity:
+
+order.setAmount(7777.00)
+
+No repository.save() was called.
+
+Hibernate generated UPDATE SQL and database became:
+
+7777.00
+
+Conclusion:
+
+A managed entity does not require save() after every field modification.
+
+
+# Experiment A1 — Without @Transactional
+
+Without a service-level @Transactional boundary:
+
+findById()
+↓
+repository operation
+↓
+repository transaction ends
+↓
+entity no longer remains managed for the service operation
+↓
+field modification
+↓
+no dirty-checking UPDATE
+
+
+# Experiment A2 — With @Transactional
+
+@Transactional
+↓
+Transaction begins
+↓
+Persistence Context active
+↓
+findById()
+↓
+MANAGED entity
+↓
+modify entity
+↓
+Dirty Checking
+↓
+flush
+↓
+UPDATE
+↓
+COMMIT
+
+
+## Important @Transactional Lesson
+
+@Transactional is not simply a rollback annotation.
+
+For JPA, it defines a transaction/unit-of-work boundary in which entities can remain managed and changes can be synchronized with the database during flush.
+
+
+# Experiment B — Explicit Detach
+
+EntityManager was used:
+
+entityManager.detach(order);
+
+Before detach:
+
+entityManager.contains(order) == true
+
+After detach:
+
+entityManager.contains(order) == false
+
+Then:
+
+order.setAmount(...)
+
+Result:
+
+No automatic dirty-checking UPDATE.
+
+Conclusion:
+
+Managed entity:
+→ tracked by Persistence Context
+→ dirty checking works
+
+Detached entity:
+→ not tracked
+→ dirty checking does not automatically synchronize changes
+
+
+# save() vs Dirty Checking
+
+Do not think:
+
+save()
+=
+UPDATE SQL immediately
+
+Conceptually:
+
+Repository operation
+↓
+Persistence Context
+↓
+Managed entity
+↓
+Dirty Checking
+↓
+flush
+↓
+SQL
+↓
+Database
+
+
+If an entity is already managed inside an active transaction, changing its fields is enough for Hibernate to detect the modification.
+
+
+# First-Level Cache
+
+Persistence Context also acts as JPA's first-level cache.
+
+Entity identity is maintained within the same Persistence Context.
+
+Same entity identity should not be treated as multiple independently managed entity instances inside one persistence context.
+
+
+# Important Interview Questions
+
+1. What is Persistence Context?
+2. What are the JPA entity lifecycle states?
+3. What is a transient entity?
+4. What is a managed entity?
+5. What is a detached entity?
+6. What is a removed entity?
+7. What is dirty checking?
+8. Why can Hibernate update an entity without repository.save()?
+9. What is flush?
+10. save() vs flush()?
+11. What role does @Transactional play in JPA?
+12. What happens to an entity after EntityManager.detach()?
+13. What does EntityManager.contains() tell us?
+14. What is first-level cache?
+15. What happens when a transient entity is referenced by a managed entity?

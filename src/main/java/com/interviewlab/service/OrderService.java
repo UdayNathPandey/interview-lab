@@ -16,5 +16,6 @@ public interface OrderService {
     public void deleteOrder(Long id);
     public void testCustomerOrderRelationship();
     public void testDirtyChecking(Long id);
+    void testDetachedEntity(Long id);
 
 }

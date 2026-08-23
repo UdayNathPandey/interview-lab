@@ -9,6 +9,8 @@ import com.interviewlab.entity.OrderStatus;
 import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.CustomerRepository;
 import com.interviewlab.repository.OrderRepository;
+//import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -215,6 +217,23 @@ public class OrderServiceImp implements OrderService{
 
         orderRepository.save(order);
 
+    }
+
+    @Transactional // this is required for dirty checking to work
+    public void testDirtyChecking(Long id)
+    {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Order not found for id "+id));
+        System.out.println(
+                "Before = " + order.getAmount()
+        );
+
+        order.setAmount(
+                new BigDecimal("7778.00")
+        );
+
+        System.out.println(
+                "After = " + order.getAmount());
     }
 
 }

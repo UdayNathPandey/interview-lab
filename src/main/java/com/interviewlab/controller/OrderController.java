@@ -92,4 +92,11 @@ public class OrderController {
 
         return ResponseEntity.ok("Customer + Order created");
     }
+
+    @PostMapping("/test/dirty-checking/{id}")
+    public ResponseEntity<String> testDirtyChecking(@PathVariable Long id)
+    {
+        orderService.testDirtyChecking(id);
+        return ResponseEntity.ok("Dirty checking test completed");
+    }
 }

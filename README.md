@@ -2928,3 +2928,249 @@ customerRepository.save(customer)
 MANAGED/PERSISTENT
 
 Managed entity can participate in the persistence context and be synchronized with the database.
+# STEP 6.3 — Persistence Context + Entity Lifecycle
+
+## Persistence Context
+
+Persistence Context is the JPA/Hibernate context that manages and tracks entity instances.
+
+Conceptually:
+
+Entity
+↓
+Persistence Context
+↓
+Hibernate
+↓
+Database
+
+
+## Entity Lifecycle
+
+### 1. TRANSIENT
+
+Created using:
+
+new Customer();
+
+Entity is not managed.
+
+No database row exists yet.
+
+Example:
+
+Customer customer = new Customer();
+
+State:
+
+TRANSIENT
+
+
+### 2. MANAGED / PERSISTENT
+
+Entity becomes associated with the persistence context.
+
+Example:
+
+customerRepository.save(customer);
+
+State:
+
+MANAGED
+
+Hibernate tracks changes to managed entities.
+
+
+### 3. DETACHED
+
+Entity was previously managed but is no longer associated with the persistence context.
+
+Examples:
+
+- persistence context closed
+- transaction/session ended
+- entity explicitly detached
+
+Changes to a detached entity are not automatically tracked by Hibernate.
+
+
+### 4. REMOVED
+
+Managed entity is marked for deletion.
+
+Example:
+
+repository.delete(entity);
+
+Conceptually:
+
+MANAGED
+↓
+REMOVED
+↓
+flush
+↓
+DELETE SQL
+
+
+## Entity Lifecycle Summary
+
+TRANSIENT
+↓
+persist/save
+↓
+MANAGED
+↓
+detach/close
+↓
+DETACHED
+
+MANAGED
+↓
+remove/delete
+↓
+REMOVED
+
+
+## Dirty Checking
+
+Dirty checking is Hibernate's mechanism for detecting changes made to managed entities.
+
+Example:
+
+@Transactional
+public void update(Long id) {
+
+    Order order = orderRepository.findById(id)
+            .orElseThrow();
+
+    order.setAmount(new BigDecimal("7777.00"));
+
+    // save() not required for dirty checking
+}
+
+Conceptually:
+
+Database/Snapshot
+amount = 2500
+
+Managed Entity
+amount = 7777
+
+       ↓
+
+Dirty Checking
+
+       ↓
+
+UPDATE orders
+SET amount = 7777
+WHERE id = ...
+
+
+## Important
+
+If an entity is already managed inside the persistence context, changing its fields can be automatically synchronized with the database during flush.
+
+Explicit repository.save() is not required merely to trigger dirty checking.
+
+
+## @Transactional
+
+Typical flow:
+
+@Transactional
+↓
+Transaction begins
+↓
+Persistence Context active
+↓
+Entity fetched
+↓
+Entity becomes MANAGED
+↓
+Entity modified
+↓
+Method completes
+↓
+Flush
+↓
+SQL
+↓
+Commit
+
+
+## save() vs flush()
+
+Do not mentally equate:
+
+save()
+=
+immediate SQL execution
+
+Conceptually:
+
+save/persist
+↓
+Persistence Context
+↓
+flush
+↓
+SQL
+↓
+Database
+
+
+## First-Level Cache
+
+Persistence Context also acts as JPA's first-level cache.
+
+Within one persistence context, entity identity is maintained.
+
+Example:
+
+find(Order, 5)
+find(Order, 5)
+
+Both refer to the same managed entity identity within the same persistence context.
+
+## Doubt : is @Transactional required for dirty checking ?
+Haan bhai, automatic dirty checking ke liye @Transactional lagana bilkul zaruri hai! 🔥
+
+Agar tum @Transactional hata doge, toh dirty checking kaam nahi karegi aur database mein koi UPDATE query fire nahi hogi. Chalo dekhte hain kyun:
+
+1. Jab tum @Transactional use karte ho (Current Code)
+   Transaction Start: Method ke start hote hi Spring ek naya transaction aur Hibernate ka Persistence Context (Session) khol deta hai.
+
+    MANAGED State: Jab tum orderRepository.findById(id) call karte ho, entity us persistence context mein MANAGED state mein aa jati hai.
+
+    Tracking: Jab tum order.setAmount(...) karte ho, Hibernate is change ko track kar raha hota hai.
+
+    Flush & Commit: Method khatam hote hi transaction commit hota hai. Hibernate automatically flush karta hai, dirty checking chalata hai, aur bina save() call kiye UPDATE query fire kar deta hai.
+
+2. Agar tum @Transactional HATA doge (What if removed)
+   No Active Transaction: Tumhare testDirtyChecking method ke upar koi transaction nahi hoga.
+
+    Tiny Transaction in Repo: Spring Data JPA ka findById() apna ek chota sa default transaction banayega sirf data fetch karne ke liye. Jaise hi findById() complete hoga, wo chota transaction aur uska persistence context close ho jayega.
+
+    DETACHED State: Kyunki persistence context close ho gaya, jo Order object tumhe mila wo ab DETACHED state mein chala jayega. Hibernate ab usko track nahi kar raha hai.
+
+    No Tracking, No Update: Ab jab tum order.setAmount(...) karoge, toh sirf Java memory mein object change hoga. Method khatam hone par koi transaction commit nahi ho raha aur koi flush nahi ho raha. Result: Database mein kuch update nahi hoga.
+
+## Important Interview Questions
+
+1. What is Persistence Context?
+2. What are the JPA entity lifecycle states?
+3. What is a transient entity?
+4. What is a managed entity?
+5. What is a detached entity?
+6. What is a removed entity?
+7. What is dirty checking?
+8. Why can Hibernate update a managed entity without repository.save()?
+9. What is flush?
+10. save() vs flush()?
+11. What is the first-level cache?
+12. What role does @Transactional play in dirty checking?
+13. What happens when a detached entity is modified?
+14. What happens when a transient entity is referenced by a persistent entity?
+15. What is the difference between Persistence Context and database?

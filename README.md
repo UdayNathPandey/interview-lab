@@ -2323,3 +2323,608 @@ DESC orders;
 and:
 
 SHOW CREATE TABLE orders;
+# STEP 6.2 — Entity Relationships
+
+## Relationship
+
+One Customer can have many Orders.
+
+One Order belongs to one Customer.
+
+Customer
+1
+|
+N
+Order
+
+JPA:
+
+Customer
+@OneToMany
+↓
+Orders
+
+Order
+@ManyToOne
+↓
+Customer
+
+
+## Foreign Key
+
+A foreign key is a column that references the primary key of another table.
+
+Example:
+
+customer.id
+↑
+|
+orders.customer_id
+
+For Customer → Order (1:N), the foreign key is normally stored on the MANY side:
+
+orders.customer_id
+
+
+## @ManyToOne
+
+Order has:
+
+@ManyToOne
+private Customer customer;
+
+Meaning:
+
+Many Order records can reference the same Customer.
+
+Database representation:
+
+orders.customer_id → customer.id
+
+
+## @JoinColumn
+
+@JoinColumn(name = "customer_id")
+
+Defines the database FK column used by the relationship.
+
+Java:
+
+Order.customer
+
+maps to:
+
+Database:
+
+orders.customer_id
+
+
+## Owning Side
+
+The owning side controls the relationship/FK mapping.
+
+In Customer → Order:
+
+Order is the owning side because it contains:
+
+@ManyToOne
+@JoinColumn(name = "customer_id")
+
+The FK is stored in orders.customer_id.
+
+
+## Inverse / Non-Owning Side
+
+Customer is the inverse/non-owning side.
+
+@OneToMany(mappedBy = "customer")
+
+It does not independently control the FK.
+
+It points to the relationship already defined by:
+
+Order.customer
+
+
+## mappedBy
+
+mappedBy identifies the Java entity field that owns the relationship.
+
+Example:
+
+Order:
+
+private Customer customer;
+
+Customer:
+
+@OneToMany(mappedBy = "customer")
+private List<Order> orders;
+
+
+IMPORTANT:
+
+mappedBy uses the Java field name.
+
+Correct:
+
+mappedBy = "customer"
+
+Incorrect:
+
+mappedBy = "customer_id"
+
+
+@JoinColumn(name = "customer_id") uses the database column name.
+
+
+## What Problem Does mappedBy Solve?
+
+In a bidirectional relationship both entities contain references to each other.
+
+Customer → Orders
+Order → Customer
+
+JPA needs to know which side owns the database relationship.
+
+mappedBy tells JPA:
+
+"The other side owns this relationship; don't create/manage another independent relationship mapping from this side."
+
+This avoids redundant relationship mappings and, depending on mapping type, can avoid an unnecessary join table.
+
+
+## Bidirectional Relationship
+
+Both entities can navigate to each other.
+
+Customer → Orders
+Order → Customer
+
+Example:
+
+Customer.orders
+Order.customer
+
+
+## Unidirectional Relationship
+
+Only one entity knows about the relationship.
+
+Order → Customer
+
+Customer does not have:
+
+List<Order>
+
+
+## Does One-to-Many create an extra mapping table?
+
+Normally:
+
+@OneToMany + @ManyToOne
+
+does NOT require a separate join table.
+
+The FK is stored on the MANY side:
+
+orders.customer_id
+
+
+## When is a Join Table commonly required?
+
+Many-to-Many relationships normally require a join/association table.
+
+Example:
+
+Student
+N
+|
+student_course
+|
+N
+Course
+
+student_course:
+
+student_id
+course_id
+
+
+## Important Distinction
+
+mappedBy:
+→ Java entity field/property name
+
+@JoinColumn:
+→ database FK column name
+
+
+## Database Observation
+
+After adding the relationship:
+
+orders gained:
+
+customer_id BIGINT
+
+and SHOW CREATE TABLE showed:
+
+FOREIGN KEY (customer_id)
+REFERENCES customer(id)
+
+Therefore:
+
+Order is the owning side
+and
+orders.customer_id is the FK.
+
+## Current Schema Observation
+
+The intended Customer table should contain:
+
+id
+customer_name
+customer_email
+
+Current schema unexpectedly contains:
+
+id
+customer_email
+customer_id
+
+This should be corrected by reviewing Customer.java before manually modifying the database.
+
+## Interview Questions
+
+1. What is an owning side?
+2. What is an inverse/non-owning side?
+3. What does @JoinColumn do?
+4. What does mappedBy do?
+5. Is mappedBy a database column name?
+6. Why is @ManyToOne usually the owning side?
+7. Where is the FK stored in a 1:N relationship?
+8. What problem does mappedBy solve?
+9. What is a bidirectional relationship?
+10. What is a unidirectional relationship?
+11. Does @OneToMany always create a join table?
+12. When do we commonly need a join table?
+13. Difference between mappedBy and @JoinColumn?
+14. Can both sides of a bidirectional relationship be owning sides?
+### Important ddl-auto=update Observation
+
+An accidental column was created because:
+
+@Column(name = "customer_id")
+private String name;
+
+was used.
+
+Hibernate created:
+
+customer.customer_id
+
+After correcting the entity mapping, the old column remained.
+
+Important lesson:
+
+`ddl-auto=update` is NOT a complete schema migration/reconciliation mechanism.
+
+Removing a Java field should NOT be assumed to automatically remove the existing database column.
+
+For production schema evolution, use migration tools such as Flyway or Liquibase.
+
+In this learning project, accidental schema artifacts can be manually removed when appropriate.
+
+### Debugging Lesson
+
+Always distinguish:
+
+orders.customer_id
+→ correct FK to customer.id
+
+customer.customer_id
+→ accidental column created due to incorrect @Column mapping
+## Relationship Save Experiment
+
+Flow:
+
+Customer
+↓
+customerRepository.save(customer)
+↓
+Customer gets persisted/managed
+↓
+Order.customer = savedCustomer
+↓
+orderRepository.save(order)
+↓
+orders.customer_id = customer.id
+
+
+### Database Relationship
+
+Customer:
+
+id = 1
+
+Order:
+
+customer_id = 1
+
+The complete Customer object is NOT duplicated into the Order table.
+
+The relationship is represented through the foreign key:
+
+orders.customer_id → customer.id
+
+
+### Important
+
+@ManyToOne + @JoinColumn creates the FK relationship.
+
+The Order side owns the relationship.
+
+Customer.orders is the inverse side because:
+
+@OneToMany(mappedBy = "customer")
+
+
+### Upcoming Experiment
+
+Try saving an Order with a newly-created Customer that has NOT been persisted:
+
+new Customer()
+↓
+Order.customer
+↓
+orderRepository.save(order)
+
+Observe the Hibernate exception when no cascade is configured.
+
+This demonstrates the difference between:
+
+Transient Entity
+and
+Managed/Persistent Entity.
+## Relationship Save Experiment — Result
+
+Created and saved a Customer first:
+
+Customer
+id = 2
+
+Then assigned it to an Order:
+
+order.setCustomer(savedCustomer)
+
+Then saved the Order.
+
+Hibernate generated:
+
+INSERT INTO customer ...
+
+INSERT INTO orders
+(..., customer_id, ...)
+VALUES (..., ?, ...)
+
+Database result:
+
+customer.id = 2
+orders.customer_id = 2
+
+Therefore:
+
+orders.customer_id → customer.id
+
+The Customer object is not duplicated as a separate relationship table.
+
+The relationship is represented using the foreign key.
+
+
+## Object Reference → Foreign Key
+
+Java:
+
+order.customer
+↓
+Customer object
+↓
+id = 2
+
+Database:
+
+orders.customer_id = 2
+
+
+## Important Observation
+
+Order currently contains both:
+
+customerName
+customerEmail
+
+and:
+
+Customer customer
+
+Therefore customer information is currently duplicated/redundant in the database.
+
+Eventually the normalized design should keep customer information in the Customer table and use only:
+
+orders.customer_id
+
+in the Order table.
+
+
+## Entity Identity
+
+Two Customer objects with the same email can still represent different entities:
+
+Customer #1 → id = 1
+Customer #2 → id = 2
+
+JPA does not automatically assume that equal business fields represent the same entity.
+
+Entity identity is primarily based on the primary key.
+
+If email must be unique, that business/database constraint must be explicitly implemented.
+
+
+## save() vs SQL Execution
+
+Conceptually:
+
+save()
+↓
+Persistence Context / managed state
+↓
+flush
+↓
+SQL
+↓
+Database
+
+Important:
+
+Calling save() should not be mentally treated as "SQL is definitely executed immediately."
+
+JPA/Hibernate can delay SQL until flush/transaction synchronization.
+
+This will be studied in detail under Persistence Context + Entity Lifecycle.
+## Step 6.2 — Transient Entity Experiment
+
+### Experiment
+
+Created a Customer:
+
+Customer customer = new Customer();
+
+Then assigned it to Order:
+
+order.setCustomer(customer);
+
+But did NOT call:
+
+customerRepository.save(customer);
+
+Then:
+
+orderRepository.save(order);
+
+
+### Result
+
+Hibernate threw:
+
+TransientPropertyValueException
+
+Meaning:
+
+Persistent Order references an unsaved transient Customer.
+
+
+### Why?
+
+Customer was still TRANSIENT:
+
+Customer
+id = null
+not persisted
+not managed
+
+But Order was being persisted and contains:
+
+Order.customer → transient Customer
+
+
+Hibernate needs:
+
+orders.customer_id → customer.id
+
+But the Customer does not have a persisted database identity yet.
+
+
+### Correct Flow Without Cascade
+
+Customer
+↓
+customerRepository.save(customer)
+↓
+Customer becomes managed/persistent
+↓
+database generates Customer ID
+↓
+Order.customer = savedCustomer
+↓
+orderRepository.save(order)
+↓
+flush
+↓
+orders.customer_id = customer.id
+
+
+### Cascade Observation
+
+By default @ManyToOne does not cascade persist.
+
+Therefore:
+
+orderRepository.save(order)
+
+does NOT automatically persist a new Customer.
+
+Cascade can change this behavior, e.g.:
+
+@ManyToOne(cascade = CascadeType.PERSIST)
+
+But cascade should not be added blindly.
+
+If Customer is an independent/master entity, automatically creating a Customer while creating an Order may be undesirable.
+
+
+### Important Production Lesson
+
+Do not blindly use:
+
+cascade = CascadeType.ALL
+
+on every relationship.
+
+Cascade behavior should be chosen based on the lifecycle/ownership relationship between the entities.
+
+
+### save() vs flush()
+
+save() should not be mentally understood as:
+
+"SQL definitely executes immediately."
+
+Conceptually:
+
+save()
+↓
+Persistence Context
+↓
+managed entity
+↓
+flush
+↓
+Hibernate synchronizes state with DB
+↓
+SQL
+
+The transient reference exception was detected during flush/transaction completion.
+
+
+### Entity State Learned
+
+new Customer()
+↓
+TRANSIENT
+
+customerRepository.save(customer)
+↓
+MANAGED/PERSISTENT
+
+Managed entity can participate in the persistence context and be synchronized with the database.

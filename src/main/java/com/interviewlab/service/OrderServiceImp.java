@@ -4,13 +4,17 @@ import com.interviewlab.dto.CreateOrderRequest;
 import com.interviewlab.dto.OrderResponse;
 import com.interviewlab.dto.PatchOrderRequest;
 import com.interviewlab.dto.UpdateOrderRequest;
+import com.interviewlab.entity.Customer;
 import com.interviewlab.entity.OrderStatus;
 import com.interviewlab.exception.ResourceNotFoundException;
+import com.interviewlab.repository.CustomerRepository;
 import com.interviewlab.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.interviewlab.entity.Order;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -184,6 +188,33 @@ public class OrderServiceImp implements OrderService{
         // production me void recommended h
     }
 
+    // testing jpa internal working
+    @Autowired
+    private CustomerRepository customerRepository;
 
+    public void testCustomerOrderRelationship()
+    {
+        //create and save a customer
+        Customer customer=new Customer();
+        customer.setName("Uday");
+        customer.setEmail("uday@gmail.com");
+
+//        Customer savedCustomer = customerRepository.save(customer);
+
+        // create and save an order for that customer
+        Order order = Order.builder()
+                .customer(customer)
+                .customerEmail(customer.getEmail())
+                .customerName(customer.getName())
+                .amount(new BigDecimal("2500.00"))
+                .discount(new BigDecimal("100.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+
+    }
 
 }

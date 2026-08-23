@@ -54,6 +54,9 @@ public class Order {
     )
     private BigDecimal discount;
 
+    @ManyToOne
+    @JoinColumn(name="customer_id")
+    private Customer customer;
 
 
 }

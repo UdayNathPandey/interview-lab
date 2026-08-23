@@ -14,5 +14,6 @@ public interface OrderService {
     public OrderResponse updateOrder(Long id ,UpdateOrderRequest updateOrderRequest);
     public OrderResponse patchOrder(Long id, PatchOrderRequest patchOrderRequest);
     public void deleteOrder(Long id);
+    public void testCustomerOrderRelationship();
 
 }

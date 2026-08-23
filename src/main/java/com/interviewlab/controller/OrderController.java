@@ -84,4 +84,12 @@ public class OrderController {
         orderService.deleteOrder(id);
         return ResponseEntity.noContent().build(); // 204 status
     }
+
+    // test the customer order jpa relationship working
+    @PostMapping("/test/customer-order")
+    public ResponseEntity<String> testCustomerOrder(){
+        orderService.testCustomerOrderRelationship();
+
+        return ResponseEntity.ok("Customer + Order created");
+    }
 }

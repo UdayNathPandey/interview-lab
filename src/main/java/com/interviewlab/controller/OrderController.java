@@ -105,4 +105,11 @@ public class OrderController {
         orderService.testDetachedEntity(id);
         return ResponseEntity.ok("Dirty checking test completed");
     }
+
+    @PostMapping("/test/merged-checking/{id}")
+    public ResponseEntity<String> testMergeOrder(@PathVariable Long id)
+    {
+        orderService.testMerge(id);
+        return ResponseEntity.ok("Merge checking test completed");
+    }
 }

@@ -262,4 +262,48 @@ public class OrderServiceImp implements OrderService{
         order.setAmount(new BigDecimal("1111.00"));
     }
 
+    @Transactional
+    public void testMerge(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(("Order not found with id " + id)));
+        System.out.println("Before detach:");
+        System.out.println("contains = " + entityManager.contains(order)); //true
+
+        entityManager.detach(order);
+
+        System.out.println("After detach:");
+        System.out.println("contains = " + entityManager.contains(order)); //false
+
+        order.setAmount(new BigDecimal("4444.00"));
+
+        System.out.println("Detached object amount = "
+                + order.getAmount()); //4444.00
+
+        Order mergedOrder = entityManager.merge(order);
+
+        order.setAmount(new BigDecimal("6666.00"));
+
+        System.out.println("After merge:");
+        System.out.println("original contains = "
+                + entityManager.contains(order)); //false
+
+        System.out.println("merged contains = "
+                + entityManager.contains(mergedOrder)); //true
+
+        System.out.println("merged amount = "
+                + mergedOrder.getAmount()); //4444.00
+        System.out.println("Detached object amount = "
+                + order.getAmount()); //6666.00
+
+        System.out.println("same object = " + (order == mergedOrder)); //false
+
+        mergedOrder.setAmount(new BigDecimal("1111.00"));
+        System.out.println("merged amount after set = "
+                + mergedOrder.getAmount()); //1111.00
+        System.out.println("Detached object amount after merged set = "
+                + order.getAmount()); //6666.00
+
+
+    }
+
 }

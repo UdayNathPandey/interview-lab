@@ -3454,3 +3454,190 @@ Same entity identity should not be treated as multiple independently managed ent
 13. What does EntityManager.contains() tell us?
 14. What is first-level cache?
 15. What happens when a transient entity is referenced by a managed entity?
+## EntityManager.merge()
+
+merge() is used to copy the state of a detached entity onto a managed entity.
+
+Important:
+
+merge() does NOT make the original detached object managed.
+
+Example:
+
+Order order = ...;              // managed
+entityManager.detach(order);    // detached
+
+order.setAmount(5555);
+
+Order mergedOrder =
+entityManager.merge(order);
+
+
+After merge:
+
+entityManager.contains(order)
+→ false
+
+entityManager.contains(mergedOrder)
+→ true
+
+
+Therefore:
+
+order        → DETACHED
+mergedOrder  → MANAGED
+
+
+### Important
+
+The managed instance returned by merge() is the object that Hibernate tracks.
+
+The original detached object remains detached.
+
+
+### Practical Proof
+
+original contains = false
+merged contains   = true
+same object       = false
+
+
+### Mental Model
+
+Detached entity
+↓
+merge()
+↓
+Hibernate copies entity state
+↓
+Managed instance returned
+↓
+Persistence Context tracks managed instance
+↓
+Dirty Checking
+↓
+flush
+↓
+UPDATE
+
+
+### Important Interview Trap
+
+Q: Does merge() reattach the same object?
+
+A: No.
+
+It copies the state of the supplied entity onto a managed instance and returns that managed instance. The original object remains detached.
+
+
+### persist() vs merge()
+
+persist():
+
+TRANSIENT
+↓
+persist()
+↓
+MANAGED
+
+
+merge():
+
+DETACHED
+↓
+merge()
+↓
+MANAGED INSTANCE returned
+
+
+### Practical Observation
+
+merge() caused Hibernate to execute another SELECT for the existing entity before synchronizing the merged state.
+
+This demonstrates that merge() is not simply a flag change on the original Java object.
+## merge() — Final Hands-On Proof
+
+Experiment result:
+
+Before detach:
+contains = true
+
+After detach:
+contains = false
+
+After merge:
+original contains = false
+merged contains = true
+
+same object = false
+
+
+Therefore:
+
+original entity
+→ DETACHED
+
+merged entity
+→ MANAGED
+
+and:
+
+original != merged
+
+
+### Proof 2 — Modifying Detached Object
+
+After merge:
+
+order.setAmount(6666.00);
+
+The original detached object changed to 6666.00,
+but mergedOrder remained unchanged.
+
+Reason:
+
+order
+→ DETACHED
+→ not tracked by Persistence Context
+
+
+### Proof 3 — Modifying Managed Object
+
+mergedOrder.setAmount(1111.00);
+
+Hibernate generated UPDATE SQL.
+
+Reason:
+
+mergedOrder
+→ MANAGED
+→ tracked by Persistence Context
+→ Dirty Checking
+→ flush
+→ UPDATE
+
+
+### Final Mental Model
+
+Detached Entity
+↓
+merge()
+↓
+Managed Instance returned
+↓
+Persistence Context tracks managed instance
+↓
+modify managed instance
+↓
+Dirty Checking
+↓
+flush
+↓
+UPDATE
+
+
+Important:
+
+merge() does NOT reattach the original object.
+
+It returns a managed instance containing the state of the supplied entity.

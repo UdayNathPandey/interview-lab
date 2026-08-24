@@ -8,14 +8,16 @@ import com.interviewlab.dto.UpdateOrderRequest;
 import java.util.List;
 
 public interface OrderService {
-    public OrderResponse createOrder(CreateOrderRequest orderRequestDto);
-    public OrderResponse getOrderById(Long id);
-    public List<OrderResponse> getAllOrders();
-    public OrderResponse updateOrder(Long id ,UpdateOrderRequest updateOrderRequest);
-    public OrderResponse patchOrder(Long id, PatchOrderRequest patchOrderRequest);
-    public void deleteOrder(Long id);
-    public void testCustomerOrderRelationship();
-    public void testDirtyChecking(Long id);
+    OrderResponse createOrder(CreateOrderRequest orderRequestDto);
+    OrderResponse getOrderById(Long id);
+    List<OrderResponse> getAllOrders();
+    OrderResponse updateOrder(Long id ,UpdateOrderRequest updateOrderRequest);
+    OrderResponse patchOrder(Long id, PatchOrderRequest patchOrderRequest);
+    void deleteOrder(Long id);
+    void testCustomerOrderRelationship();
+    void testDirtyChecking(Long id);
     void testDetachedEntity(Long id);
+    void testMerge(Long id);
 
-}
+
+    }

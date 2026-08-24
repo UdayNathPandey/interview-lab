@@ -112,4 +112,35 @@ public class OrderController {
         orderService.testMerge(id);
         return ResponseEntity.ok("Merge checking test completed");
     }
+
+    @PostMapping("/test/cascade-persist")
+    public ResponseEntity<String> testCascadePersist()
+    {
+        orderService.testCascadePersist();
+        return ResponseEntity.ok("Cascade persist test completed");
+    }
+    @PostMapping("/test/cascade-merge/{id}")
+    public ResponseEntity<String> testMergeCascade(@PathVariable Long id)
+    {
+        orderService.testCascadeMerge(id);
+        return ResponseEntity.ok("Merge checking test completed");
+    }
+
+    @DeleteMapping("/test/cascade-remove/{id}")
+    public ResponseEntity<Void> testRemoveCascade(@PathVariable(name="id")Long id)
+    {
+        orderService.testCascadeRemove(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/test/cascade-orphanRemoval/{customerId}/{orderId}")
+    public ResponseEntity<Void> testCascadeOrphanRemoval(
+            @PathVariable("customerId") Long cid,
+            @PathVariable("orderId") Long oid
+    )
+    {
+        orderService.testCascadeOrphanRemoval( cid, oid);
+        return ResponseEntity.noContent().build();
+
+    }
 }

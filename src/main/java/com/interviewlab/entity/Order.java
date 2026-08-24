@@ -54,9 +54,29 @@ public class Order {
     )
     private BigDecimal discount;
 
-    @ManyToOne
+//    @ManyToOne(cascade=CascadeType.PERSIST)
+    @ManyToOne(cascade=CascadeType.MERGE)
     @JoinColumn(name="customer_id")
     private Customer customer;
 
 
 }
+
+
+/***
+ * INSERT INTO orders (id, amount, created_at, customer_email, customer_name, status, updated_at, discount, customer_id)
+ * VALUES
+ * (101, 1500.00, NOW(), 'john.doe@example.com', 'John Doe', 'CONFIRMED', NOW(), 100.00, 10),
+ * (102, 3450.50, NOW(), 'john.doe@example.com', 'John Doe', 'PENDING', NOW(), 0.00, 10),
+ * (103, 999.99, NOW(), 'john.doe@example.com', 'John Doe', 'CONFIRMED', NOW(), 50.00, 10);
+ *
+ *
+ *
+ * INSERT INTO orders (id, amount, created_at, customer_email, customer_name, status, updated_at, discount, customer_id)
+ * VALUES
+ * (201, 1200.50, NOW(), 'jane.smith@example.com', 'Jane Smith', 'CONFIRMED', NOW(), 120.00, 11),
+ * (202, 450.00, NOW(), 'jane.smith@example.com', 'Jane Smith', 'PENDING', NOW(), 0.00, 11),
+ * (203, 899.99, NOW(), 'jane.smith@example.com', 'Jane Smith', 'CANCELLED', NOW(), 50.00, 11);
+ *
+ *
+ */

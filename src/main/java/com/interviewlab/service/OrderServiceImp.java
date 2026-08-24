@@ -306,4 +306,103 @@ public class OrderServiceImp implements OrderService{
 
     }
 
+    @Transactional
+    public void testCascadePersist(){
+        Customer customer = Customer.builder()
+                .name("Cascade Customer")
+                .email("cascade@gmail.com")
+                .build();
+
+        Order order = Order.builder()
+                .customer(customer)
+                .customerName(customer.getName())
+                .customerEmail(customer.getEmail())
+                .amount(new BigDecimal("5000.00"))
+                .discount(new BigDecimal("100.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void testCascadeMerge(Long id)
+    {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("order not found with id "+id));
+
+        Customer customer = order.getCustomer();
+
+        System.out.println(
+                "Order managed = "
+                        + entityManager.contains(order));
+
+        System.out.println(
+                "Customer managed = "
+                        + entityManager.contains(customer));
+
+        entityManager.detach(order);
+        entityManager.detach(customer);
+
+        System.out.println(
+                "Order after detach = "
+                        + entityManager.contains(order));
+
+        System.out.println(
+                "Customer after detach = "
+                        + entityManager.contains(customer));
+
+        // Modify detached entities
+
+        order.setAmount(new BigDecimal("6000.00"));
+
+        customer.setName("Merged Customer");
+        customer.setEmail("merged@gmail.com");
+
+        //merge order
+        Order mergedOrder=entityManager.merge(order);
+
+        System.out.println(
+                "Merged Customer managed = "
+                + entityManager.contains(
+                mergedOrder.getCustomer()));
+
+        System.out.println(
+                "Merged Customer name = "
+                        + mergedOrder.getCustomer().getName());
+
+        System.out.println(
+                "Older Customer name == merged customer "
+                        + (mergedOrder.getCustomer() == customer));
+
+
+
+
+    }
+
+    @Transactional
+    public void testCascadeRemove(Long id)
+    {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Customer not found with id "+id));
+        customerRepository.delete(customer);
+    }
+
+    @Transactional
+    public void testCascadeOrphanRemoval(Long cid,Long oid)
+    {
+            Customer customer=customerRepository.findById(cid)
+                    .orElseThrow(()->new ResourceNotFoundException("Customer not found with id "+cid));
+
+            Order order =orderRepository.findById(oid)
+                    .orElseThrow(()->new ResourceNotFoundException("Order not found with id"+oid));
+
+            customer.getOrders().remove(order); // ye database se us order ko delete kr dega jo orphan hua h
+            // to maintain the bidirectional integraty , lets manually delete the customer from deleted order
+            order.setCustomer(null); // ye bs java me h , lekin tbhi usko maintain krna recommended h
+
+
+    }
+
 }

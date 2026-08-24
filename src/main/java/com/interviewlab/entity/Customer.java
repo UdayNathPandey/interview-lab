@@ -26,6 +26,22 @@ public class Customer {
     length=50)
     private String email;
 
-    @OneToMany(mappedBy="customer")
+    @OneToMany(
+            mappedBy="customer",
+//            cascade=CascadeType.REMOVE
+            orphanRemoval=true
+    )
     private List<Order> orders;
 }
+
+
+/***
+ * INSERT INTO customer (id, customer_email, customer_name)
+ * VALUES (10, 'john.doe@example.com', 'John Doe');
+ *
+ *
+ * INSERT INTO customer (id, customer_email, customer_name)
+ * VALUES (11, 'jane.smith@example.com', 'Jane Smith');
+ *
+ *
+ */

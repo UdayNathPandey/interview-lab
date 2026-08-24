@@ -18,6 +18,10 @@ public interface OrderService {
     void testDirtyChecking(Long id);
     void testDetachedEntity(Long id);
     void testMerge(Long id);
+    void testCascadePersist();
+    void testCascadeMerge(Long id);
+    void testCascadeRemove(Long id);
+    void testCascadeOrphanRemoval(Long cid,Long oid);
 
 
     }

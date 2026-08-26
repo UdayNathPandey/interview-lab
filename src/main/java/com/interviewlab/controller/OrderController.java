@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderController {
 
-//    @Autowired // we will use construtor injection instead of field autowiring
+    //    @Autowired // we will use construtor injection instead of field autowiring
     private final OrderService orderService;
 
 //    public OrderController(OrderService orderService)
@@ -27,23 +27,21 @@ public class OrderController {
 //    }
 
     @PostMapping("/orders")
-    public ResponseEntity<OrderResponse>  createOrder(
+    public ResponseEntity<OrderResponse> createOrder(
             @RequestBody // missed it
-                    @Valid
-            CreateOrderRequest orderReq)
-    {
+            @Valid
+            CreateOrderRequest orderReq) {
         OrderResponse orderResponse = orderService.createOrder(orderReq);
         return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse); // maine phle HttpStatus.OK likha tha
     }
 
     @GetMapping("/orders/{id}")
-    public ResponseEntity<OrderResponse> getOrder(@PathVariable("id") Long id)
-    {
+    public ResponseEntity<OrderResponse> getOrder(@PathVariable("id") Long id) {
 
         // never put try catch in controller -> bad practice -> that is why RestControllerAdvice aya
 //        try
 //        {
-            OrderResponse orderResponse = orderService.getOrderById(id);
+        OrderResponse orderResponse = orderService.getOrderById(id);
 //            return ResponseEntity.status(HttpStatus.OK).body(orderResponse);
         return ResponseEntity.ok(orderResponse);
 //        }catch (RuntimeException ex) {
@@ -53,18 +51,17 @@ public class OrderController {
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<List<OrderResponse>> getAllOrders()
-    {
+    public ResponseEntity<List<OrderResponse>> getAllOrders() {
 //        List<OrderResponse> allOrders = orderService.getAllOrders();
         return ResponseEntity.ok(orderService.getAllOrders());
     }
 
     @PutMapping("/orders/{id}")
     public ResponseEntity<OrderResponse> updateOrder(
-            @PathVariable("id")Long id,
-    @Valid @RequestBody UpdateOrderRequest updateOrderRequest) // here I missed @Valid
+            @PathVariable("id") Long id,
+            @Valid @RequestBody UpdateOrderRequest updateOrderRequest) // here I missed @Valid
     {
-        return ResponseEntity.ok(orderService.updateOrder(id,updateOrderRequest));
+        return ResponseEntity.ok(orderService.updateOrder(id, updateOrderRequest));
     }
 
     @PatchMapping("/orders/{id}")
@@ -72,14 +69,12 @@ public class OrderController {
 
             @PathVariable("id") Long id,
             @RequestBody @Valid PatchOrderRequest patchOrderRequest
-            )
-    {
-        return ResponseEntity.ok(orderService.patchOrder(id,patchOrderRequest));
+    ) {
+        return ResponseEntity.ok(orderService.patchOrder(id, patchOrderRequest));
     }
 
     @DeleteMapping("/orders/{id}")
-    public ResponseEntity<Void> deleteOrder( @PathVariable("id") Long id)
-    {
+    public ResponseEntity<Void> deleteOrder(@PathVariable("id") Long id) {
 //        return ResponseEntity.ok(orderService.deleteOrder(id)); // I did this
         orderService.deleteOrder(id);
         return ResponseEntity.noContent().build(); // 204 status
@@ -87,48 +82,44 @@ public class OrderController {
 
     // test the customer order jpa relationship working
     @PostMapping("/test/customer-order")
-    public ResponseEntity<String> testCustomerOrder(){
+    public ResponseEntity<String> testCustomerOrder() {
         orderService.testCustomerOrderRelationship();
 
         return ResponseEntity.ok("Customer + Order created");
     }
 
     @PostMapping("/test/dirty-checking/{id}")
-    public ResponseEntity<String> testDirtyChecking(@PathVariable Long id)
-    {
+    public ResponseEntity<String> testDirtyChecking(@PathVariable Long id) {
         orderService.testDirtyChecking(id);
         return ResponseEntity.ok("Dirty checking test completed");
     }
+
     @PostMapping("/test/detach-checking/{id}")
-    public ResponseEntity<String> testDetachedEntity(@PathVariable Long id)
-    {
+    public ResponseEntity<String> testDetachedEntity(@PathVariable Long id) {
         orderService.testDetachedEntity(id);
         return ResponseEntity.ok("Dirty checking test completed");
     }
 
     @PostMapping("/test/merged-checking/{id}")
-    public ResponseEntity<String> testMergeOrder(@PathVariable Long id)
-    {
+    public ResponseEntity<String> testMergeOrder(@PathVariable Long id) {
         orderService.testMerge(id);
         return ResponseEntity.ok("Merge checking test completed");
     }
 
     @PostMapping("/test/cascade-persist")
-    public ResponseEntity<String> testCascadePersist()
-    {
+    public ResponseEntity<String> testCascadePersist() {
         orderService.testCascadePersist();
         return ResponseEntity.ok("Cascade persist test completed");
     }
+
     @PostMapping("/test/cascade-merge/{id}")
-    public ResponseEntity<String> testMergeCascade(@PathVariable Long id)
-    {
+    public ResponseEntity<String> testMergeCascade(@PathVariable Long id) {
         orderService.testCascadeMerge(id);
         return ResponseEntity.ok("Merge checking test completed");
     }
 
     @DeleteMapping("/test/cascade-remove/{id}")
-    public ResponseEntity<Void> testRemoveCascade(@PathVariable(name="id")Long id)
-    {
+    public ResponseEntity<Void> testRemoveCascade(@PathVariable(name = "id") Long id) {
         orderService.testCascadeRemove(id);
         return ResponseEntity.noContent().build();
     }
@@ -137,26 +128,39 @@ public class OrderController {
     public ResponseEntity<Void> testCascadeOrphanRemoval(
             @PathVariable("customerId") Long cid,
             @PathVariable("orderId") Long oid
-    )
-    {
-        orderService.testCascadeOrphanRemoval( cid, oid);
+    ) {
+        orderService.testCascadeOrphanRemoval(cid, oid);
         return ResponseEntity.noContent().build();
 
     }
 
     @GetMapping("/test/fetchEagerLazyOrder/{id}")
-    public ResponseEntity<String> testFetchEagerOrder(@PathVariable("id")Long id)
-    {
+    public ResponseEntity<String> testFetchEagerOrder(@PathVariable("id") Long id) {
         orderService.testFetchEagerandLazy(id);
         return ResponseEntity.ok("testing Fetch Eager completed");
 
     }
 
     @GetMapping("/test/fetchEagerLazyCustomer/{id}")
-    public ResponseEntity<String> testFetchEagerCustomer(@PathVariable("id")Long id)
-    {
+    public ResponseEntity<String> testFetchEagerCustomer(@PathVariable("id") Long id) {
         orderService.testCustomerFetch(id);
         return ResponseEntity.ok("testing Fetch Eager completed");
+
+    }
+
+    @GetMapping("/test/n-plus-one")
+    public ResponseEntity<Void> testNPlusOne() {
+
+        orderService.testNPlusOne();
+        return ResponseEntity.ok().build();
+
+    }
+
+    @GetMapping("/test/joinfetch")
+    public ResponseEntity<Void> testJoinFetch() {
+
+        orderService.testJoinFetch();
+        return ResponseEntity.ok().build();
 
     }
 }

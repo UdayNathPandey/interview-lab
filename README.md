@@ -4763,4 +4763,321 @@ N+1 is a query design/fetching problem, not simply a LAZY problem.
 5. JOIN FETCH
 6. EntityGraph
 7. DTO projection
+   JPA Experiments
+   │
+   ├── FetchType LAZY vs EAGER
+   ├── N+1 Problem
+   ├── JOIN FETCH
+   ├── EntityGraph
+   ├── DTO Projection
+   └── ...
+### Experiment: N+1 Problem
 
+Dataset:
+- 5 customers
+- 10 orders
+- Customer 1 → 4 orders
+- Customer 2 → 3 orders
+- Customer 3 → 1 order
+- Customer 4 → 1 order
+- Customer 5 → 1 order
+#### Experiment A
+Customer.orders = EAGER
+Order.customer = LAZY
+
+Result:
+1 query for orders
+5 additional customer queries
+Total = 6 queries
+#### Experiment B
+Customer.orders = LAZY
+Order.customer = LAZY
+
+Result:
+1 query for orders
+5 additional customer queries
+Total = 6 queries
+### Conclusion
+
+LAZY/EAGER does not inherently solve the N+1 problem.
+
+N+1 occurs when:
+1 query fetches the parent entities
++
+additional queries are triggered while accessing associations.
+
+Persistence Context prevents duplicate queries for the same entity
+within the same persistence context, but it does not eliminate the
+N+1 pattern.
+# STEP 6.6 — Solving N+1
+
+## Problem
+
+Naive code:
+
+List<Order> orders = orderRepository.findAll();
+
+for (Order order : orders) {
+order.getCustomer().getName();
+}
+
+Can cause:
+
+1 query → Orders
+
+N additional queries → Customers
+
+Total:
+1 + N
+
+
+# Solution 1 — JOIN FETCH
+
+@Query("""
+select o
+from Order o
+join fetch o.customer
+""")
+List<Order> findAllWithCustomer();
+
+
+JOIN FETCH:
+
+- JPQL/HQL feature
+- Explicitly fetches association
+- `join fetch` normally means INNER JOIN
+- Can control query conditions and joins explicitly
+
+Concept:
+
+SELECT Orders + Customers
+in one fetch query.
+
+
+Important:
+
+JOIN FETCH ≠ normal JOIN
+
+JOIN:
+Used for query/join logic.
+
+JOIN FETCH:
+Used to join AND fetch the association into the entity graph.
+
+
+# Solution 2 — LEFT JOIN FETCH
+
+@Query("""
+select o
+from Order o
+left join fetch o.customer
+""")
+List<Order> findAllWithCustomer();
+
+
+JOIN FETCH:
+
+INNER JOIN
+↓
+Orders without matching Customer excluded
+
+
+LEFT JOIN FETCH:
+
+LEFT OUTER JOIN
+↓
+Orders without Customer can remain.
+
+
+Example:
+
+Order 1 → Customer 1
+Order 2 → Customer 2
+Order 3 → NULL
+
+
+JOIN FETCH:
+
+Order 1
+Order 2
+
+
+LEFT JOIN FETCH:
+
+Order 1
+Order 2
+Order 3
+
+
+Important:
+
+The current project's `orders.customer_id` can be NULL,
+so INNER JOIN FETCH and LEFT JOIN FETCH can return different
+numbers of Orders.
+
+
+# Solution 3 — EntityGraph
+
+@EntityGraph(attributePaths = "customer")
+List<Order> findAll();
+
+
+EntityGraph tells Spring Data JPA which associations should be
+included in the fetch plan for this repository method.
+
+
+Important:
+
+EntityGraph does NOT mean:
+
+"always generate LEFT JOIN."
+
+
+It means:
+
+"fetch this association as part of this query's fetch plan."
+
+
+Hibernate decides the SQL implementation.
+
+In the hands-on experiment Hibernate generated:
+
+from orders
+left join customer
+on customer.id = orders.customer_id
+
+
+No N+1 Customer queries occurred.
+
+
+# EntityGraph Does NOT Globally Change Mapping
+
+If entity has:
+
+@ManyToOne(fetch = FetchType.LAZY)
+Customer customer;
+
+
+and repository method has:
+
+@EntityGraph(attributePaths = "customer")
+List<Order> findAll();
+
+
+The Customer relationship is not globally changed to EAGER.
+
+The EntityGraph applies to that repository query/use case.
+
+
+# JOIN FETCH vs EntityGraph
+
+JOIN FETCH:
+
+- Explicit JPQL/HQL query
+- Fetch strategy written inside query
+- More control over query joins/filtering
+- Useful for custom query logic
+
+
+EntityGraph:
+
+- Fetch plan
+- Less query code
+- Very useful with Spring Data repository methods
+- Allows query-specific fetching
+
+
+# Important Mental Model
+
+JOIN FETCH
+↓
+Explicit query instruction
+
+
+EntityGraph
+↓
+Fetch-plan instruction
+
+
+@JoinColumn
+↓
+Defines FK mapping
+
+
+FetchType
+↓
+Default association loading strategy
+
+
+Cascade
+↓
+Operation propagation
+
+
+These concepts are independent.
+
+
+# Collection Fetch Join Warning
+
+Fetching a collection:
+
+Customer
+|
++── Order 1
++── Order 2
++── Order 3
+
+
+with:
+
+left join fetch c.orders
+
+
+can produce multiple SQL rows for the same Customer:
+
+Customer | Order 1
+Customer | Order 2
+Customer | Order 3
+
+
+Hibernate reconstructs the entity graph.
+
+Collection fetch joins can also create issues with pagination
+and duplicate root results.
+
+DISTINCT may be required in some JPQL queries, but it is not a
+universal solution.
+
+
+# N+1 Solutions
+
+N+1
+↓
+Identify required data
+↓
+JOIN FETCH
+OR
+EntityGraph
+OR
+DTO Projection
+
+
+# Next Topic
+
+DTO Projection
+
+Goal:
+
+Instead of loading:
+
+Order entity
++
+Customer entity
+
+load only required fields:
+
+orderId
+amount
+customerName
+
+directly into a DTO.

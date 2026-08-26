@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImp implements OrderService{
@@ -97,7 +98,18 @@ public class OrderServiceImp implements OrderService{
 //
 //        }
         // yha maine by default for loop se solve kra , should have though about stream while processing collection
-        return orderRepository.findAll().stream()
+
+        List<Order> orders = orderRepository.findAll();
+
+        for (Order order : orders) {
+            System.out.println(
+                    "Order ID = " + order.getId()
+                            + ", Customer = " + order.getCustomer().getName()
+            );
+        }
+
+//        return orderRepository.findAll().stream() // ye @EntityGraph(attributePaths="customer") test krne k liye hataya
+        return orders.stream()
                 .map(order ->
                        OrderResponse.builder()
                         .id(order.getId())
@@ -437,5 +449,34 @@ public class OrderServiceImp implements OrderService{
         System.out.println(
                 "Orders count = "
                         + customer.getOrders().size());
+    }
+
+    @Transactional(readOnly=true)
+    public void testNPlusOne()
+    {
+        List<Order> orders= orderRepository.findAll();
+        for(Order order : orders)
+        {
+            System.out.println(
+                    "Order ID = " + order.getId()
+                            + ", Customer = "
+                            + order.getCustomer().getName()
+            );
+        }
+    }
+
+    // solution to n+1 problem: join fetch
+    @Transactional(readOnly = true)
+    public void testJoinFetch() {
+
+        List<Order> orders = orderRepository.findAllWithCustomer();
+
+        for (Order order : orders) {
+
+            System.out.println(
+                    "Order ID = " + order.getId()
+                            + ", Customer = " + order.getCustomer().getName()
+            );
+        }
     }
 }

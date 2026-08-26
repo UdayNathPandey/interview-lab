@@ -1,0 +1,42 @@
+
+
+
+// for testing n+1
+
+INSERT INTO customer (id,customer_name, customer_email)
+VALUES
+(1,'Customer 1', 'customer1@example.com'),
+(2,'Customer 2', 'customer2@example.com'),
+(3,'Customer 3', 'customer3@example.com'),
+(4,'Customer 4', 'customer4@example.com'),
+(5,'Customer 5', 'customer5@example.com');
+
+INSERT INTO orders
+(customer_name, customer_email, amount, status, created_at, updated_at, discount, customer_id)
+VALUES
+('Customer 1', 'customer1@example.com', 1000.00, 'PENDING',   NOW(), NOW(), 50.00, 1),
+('Customer 2', 'customer2@example.com', 2500.00, 'CONFIRMED', NOW(), NOW(), 100.00, 2),
+('Customer 3', 'customer3@example.com', 5000.00, 'PENDING',   NOW(), NOW(), 250.00, 3),
+('Customer 4', 'customer4@example.com', 750.00,  'CANCELLED', NOW(), NOW(), 0.00, 4),
+('Customer 5', 'customer5@example.com', 3200.00, 'CONFIRMED', NOW(), NOW(), 150.00, 5);
+
+INSERT INTO orders
+(customer_name, customer_email, amount, status, created_at, updated_at, discount, customer_id)
+VALUES
+('Customer 1', 'customer1@example.com', 1800.00, 'CONFIRMED', NOW(), NOW(), 80.00, 1),
+('Customer 1', 'customer1@example.com', 3200.00, 'PENDING',   NOW(), NOW(), 120.00, 1),
+('Customer 1', 'customer1@example.com', 4500.00, 'CONFIRMED', NOW(), NOW(), 200.00, 1),
+('Customer 2', 'customer2@example.com', 1500.00, 'PENDING',   NOW(), NOW(), 50.00, 2),
+('Customer 2', 'customer2@example.com', 2700.00, 'CANCELLED', NOW(), NOW(), 100.00, 2);
+
+SELECT
+    c.id,
+    c.customer_name,
+    o.id AS order_id,
+    o.amount,
+    o.status
+FROM customer c
+LEFT JOIN orders o
+    ON c.id = o.customer_id
+ORDER BY c.id, o.id;
+

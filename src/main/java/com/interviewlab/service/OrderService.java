@@ -24,6 +24,8 @@ public interface OrderService {
     void testCascadeOrphanRemoval(Long cid,Long oid);
     void testFetchEagerandLazy(Long id);
     void testCustomerFetch(Long id);
+    void testNPlusOne();
+    void testJoinFetch();
 
 
-    }
+}

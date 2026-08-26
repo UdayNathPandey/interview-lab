@@ -1,9 +1,6 @@
 package com.interviewlab.service;
 
-import com.interviewlab.dto.CreateOrderRequest;
-import com.interviewlab.dto.OrderResponse;
-import com.interviewlab.dto.PatchOrderRequest;
-import com.interviewlab.dto.UpdateOrderRequest;
+import com.interviewlab.dto.*;
 
 import java.util.List;
 
@@ -26,6 +23,13 @@ public interface OrderService {
     void testCustomerFetch(Long id);
     void testNPlusOne();
     void testJoinFetch();
+    List<OrderSummaryDto> getOrderSummaries();
+    List<OrderSummaryView> getOrderSummaryViews();
+    void testTransactionSuccess();
+    void testTransactionRollback();
+    void testCheckedExceptionRollback() throws Exception;
+    void testRollbackFor() throws Exception;
+    void testNoRollbackFor();
 
 
 }

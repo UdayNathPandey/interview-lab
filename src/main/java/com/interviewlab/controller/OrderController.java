@@ -1,9 +1,6 @@
 package com.interviewlab.controller;
 
-import com.interviewlab.dto.CreateOrderRequest;
-import com.interviewlab.dto.OrderResponse;
-import com.interviewlab.dto.PatchOrderRequest;
-import com.interviewlab.dto.UpdateOrderRequest;
+import com.interviewlab.dto.*;
 import com.interviewlab.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -163,4 +160,60 @@ public class OrderController {
         return ResponseEntity.ok().build();
 
     }
+
+    @GetMapping("/orders/summary")
+    public ResponseEntity<List<OrderSummaryDto>> getOrderSummaries()
+    {
+        return ResponseEntity.ok(orderService.getOrderSummaries());
+    }
+
+    @GetMapping("/orders/summary-interface")
+    public ResponseEntity<List<OrderSummaryView>> getOrderSummaryViews() {
+
+        return ResponseEntity.ok(
+                orderService.getOrderSummaryViews()
+        );
+    }
+
+    @PostMapping("/test/transaction-success")
+    public ResponseEntity<Void> testTransactionSuccess() {
+
+        orderService.testTransactionSuccess();
+
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping("/test/transaction-failure")
+    public ResponseEntity<Void> testTransactionFailure() {
+
+        orderService.testTransactionRollback();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/test/checked-exception")
+    public ResponseEntity<Void> testCheckedException()
+            throws Exception {
+
+        orderService.testCheckedExceptionRollback();
+
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping("/test/checked-exception-with-rollbackFor")
+    public ResponseEntity<Void> testCheckedExceptionWithRollbackFor()
+            throws Exception {
+
+        orderService.testRollbackFor();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/test/unchecked-exception-with-norollbackFor")
+    public ResponseEntity<Void> testUnCheckedExceptionWithNoRollbackFor()
+            throws Exception {
+
+        orderService.testNoRollbackFor();
+
+        return ResponseEntity.ok().build();
+    }
+
 }

@@ -1,9 +1,6 @@
 package com.interviewlab.service;
 
-import com.interviewlab.dto.CreateOrderRequest;
-import com.interviewlab.dto.OrderResponse;
-import com.interviewlab.dto.PatchOrderRequest;
-import com.interviewlab.dto.UpdateOrderRequest;
+import com.interviewlab.dto.*;
 import com.interviewlab.entity.Customer;
 import com.interviewlab.entity.OrderStatus;
 import com.interviewlab.exception.ResourceNotFoundException;
@@ -21,6 +18,8 @@ import com.interviewlab.entity.Order;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.interviewlab.exception.NoRollbackException;
 
 
 @Service
@@ -479,4 +478,143 @@ public class OrderServiceImp implements OrderService{
             );
         }
     }
+
+    @Transactional(readOnly=true)
+    public List<OrderSummaryDto> getOrderSummaries()
+    {
+        return orderRepository.findOrderSummaries();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderSummaryView> getOrderSummaryViews() {
+
+        return orderRepository.findOrderSummaryViews();
+    }
+
+    @Transactional
+    public void testTransactionSuccess() {
+
+        Customer customer = new Customer();
+        customer.setName("Transaction Customer");
+        customer.setEmail("transaction@gmail.com");
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        Order order = Order.builder()
+                .customer(savedCustomer)
+                .customerName(savedCustomer.getName())
+                .customerEmail(savedCustomer.getEmail())
+                .amount(new BigDecimal("5000.00"))
+                .discount(new BigDecimal("100.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+
+        System.out.println("Both operations completed");
+    }
+    @Transactional
+    public void testTransactionRollback() {
+
+        Customer customer = new Customer();
+        customer.setName("Rollback Customer");
+        customer.setEmail("rollback@gmail.com");
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        Order order = Order.builder()
+                .customer(savedCustomer)
+                .customerName(savedCustomer.getName())
+                .customerEmail(savedCustomer.getEmail())
+                .amount(new BigDecimal("7000.00"))
+                .discount(new BigDecimal("200.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+
+        throw new RuntimeException("Testing transaction rollback");
+    }
+
+    @Transactional
+    public void testCheckedExceptionRollback() throws Exception {
+
+        Customer customer = new Customer();
+        customer.setName("Checked Customer");
+        customer.setEmail("checked@gmail.com");
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        Order order = Order.builder()
+                .customer(savedCustomer)
+                .customerName(savedCustomer.getName())
+                .customerEmail(savedCustomer.getEmail())
+                .amount(new BigDecimal("9000.00"))
+                .discount(new BigDecimal("100.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+
+        System.out.println("Both inserts executed");
+
+        throw new Exception("Testing checked exception");
+    }
+
+    @Transactional(rollbackFor= Exception.class)
+    public void testRollbackFor() throws Exception {
+
+        Customer customer = new Customer();
+        customer.setName("RollbackFor Customer");
+        customer.setEmail("rollbackfor@gmail.com");
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        Order order = Order.builder()
+                .customer(savedCustomer)
+                .customerName(savedCustomer.getName())
+                .customerEmail(savedCustomer.getEmail())
+                .amount(new BigDecimal("10000.00"))
+                .discount(new BigDecimal("100.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+
+        throw new Exception("Testing rollbackFor");
+    }
+
+    @Transactional(noRollbackFor = NoRollbackException.class)
+    public void testNoRollbackFor() {
+
+        Customer customer = new Customer();
+        customer.setName("No Rollback Customer");
+        customer.setEmail("norollback@gmail.com");
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        Order order = Order.builder()
+                .customer(savedCustomer)
+                .customerName(savedCustomer.getName())
+                .customerEmail(savedCustomer.getEmail())
+                .amount(new BigDecimal("11000.00"))
+                .discount(new BigDecimal("100.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+
+        throw new NoRollbackException("Testing noRollbackFor");
+    }
+
 }

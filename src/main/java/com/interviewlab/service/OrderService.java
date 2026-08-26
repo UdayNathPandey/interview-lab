@@ -22,6 +22,8 @@ public interface OrderService {
     void testCascadeMerge(Long id);
     void testCascadeRemove(Long id);
     void testCascadeOrphanRemoval(Long cid,Long oid);
+    void testFetchEagerandLazy(Long id);
+    void testCustomerFetch(Long id);
 
 
     }

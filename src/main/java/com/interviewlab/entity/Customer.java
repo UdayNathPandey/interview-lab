@@ -30,6 +30,7 @@ public class Customer {
             mappedBy="customer",
 //            cascade=CascadeType.REMOVE
             orphanRemoval=true
+            ,fetch=FetchType.EAGER
     )
     private List<Order> orders;
 }

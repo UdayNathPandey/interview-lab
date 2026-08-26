@@ -143,4 +143,20 @@ public class OrderController {
         return ResponseEntity.noContent().build();
 
     }
+
+    @GetMapping("/test/fetchEagerLazyOrder/{id}")
+    public ResponseEntity<String> testFetchEagerOrder(@PathVariable("id")Long id)
+    {
+        orderService.testFetchEagerandLazy(id);
+        return ResponseEntity.ok("testing Fetch Eager completed");
+
+    }
+
+    @GetMapping("/test/fetchEagerLazyCustomer/{id}")
+    public ResponseEntity<String> testFetchEagerCustomer(@PathVariable("id")Long id)
+    {
+        orderService.testCustomerFetch(id);
+        return ResponseEntity.ok("testing Fetch Eager completed");
+
+    }
 }

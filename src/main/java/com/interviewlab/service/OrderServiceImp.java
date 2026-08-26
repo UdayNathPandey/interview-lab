@@ -405,4 +405,37 @@ public class OrderServiceImp implements OrderService{
 
     }
 
+    @Transactional
+    public void testFetchEagerandLazy(Long id)
+    {
+        System.out.println("---- BEFORE FIND ----");
+        Order order = orderRepository.findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Order not found with id "+id));
+        System.out.println("---- AFTER FIND ----");
+
+        System.out.println("Order ID = " + order.getId());
+
+        System.out.println("---- BEFORE CUSTOMER ACCESS ----");
+
+        Customer customer = order.getCustomer();
+
+        System.out.println("Got customer reference"+customer);
+        System.out.println("Got customer reference toString : "+customer.toString());
+
+        System.out.println(customer.getName());
+
+        System.out.println("---- AFTER CUSTOMER ACCESS ----");
+    }
+    @Transactional
+    public void testCustomerFetch(Long id) {
+
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow();
+
+        System.out.println("Customer loaded");
+
+        System.out.println(
+                "Orders count = "
+                        + customer.getOrders().size());
+    }
 }

@@ -4608,5 +4608,159 @@ public void removeOrder(Order order) {
 Fir apni service mein tum sirf `customer.removeOrder(order);` call kar sakte ho, jisse error ke chances khatam ho jaate hain.
 
 ---
+# STEP 6.5 — FetchType LAZY vs EAGER
 
+## What is FetchType?
+
+FetchType controls when associated entity/collection data is fetched.
+
+Two strategies:
+
+LAZY
+EAGER
+
+
+## LAZY
+
+Associated data is not required to be loaded immediately.
+
+It can be loaded when accessed.
+
+Mental model:
+
+Order
+↓
+Customer reference
+↓
+not necessarily initialized
+
+order.getCustomer().getName()
+↓
+Customer data may be fetched now
+
+
+Important:
+
+LAZY does NOT mean:
+"data will never be fetched."
+
+It means:
+"data is not required to be fetched immediately."
+
+
+## EAGER
+
+Associated entity is required to be eagerly available when the owning entity is loaded.
+
+Important:
+
+EAGER does NOT mean:
+"Hibernate must use JOIN."
+
+The exact SQL strategy is provider/query dependent.
+
+
+## JPA Default Fetch Types
+
+@ManyToOne → EAGER
+@OneToOne  → EAGER
+
+@OneToMany → LAZY
+@ManyToMany → LAZY
+
+
+## Current Project
+
+Order → Customer
+
+@ManyToOne
+@JoinColumn(name = "customer_id")
+
+Default:
+EAGER
+
+
+Customer → Orders
+
+@OneToMany(mappedBy = "customer")
+
+Default:
+LAZY
+
+
+## Important Difference
+
+LAZY:
+
+Entity loaded
+↓
+association may remain uninitialized
+↓
+access association
+↓
+SQL may execute
+
+
+EAGER:
+
+Entity loaded
+↓
+association required to be eagerly available
+
+
+## Hibernate Proxy / Lazy Loading
+
+Hibernate can use a lazy-loading mechanism/proxy/reference for an association.
+
+Conceptually:
+
+Order
+↓
+Customer proxy/reference
+↓
+actual Customer data loaded when required
+
+
+## Persistence Context Connection
+
+Lazy loading generally requires an active Persistence Context/session.
+
+If the Persistence Context is closed before a lazy association is accessed:
+
+**LazyInitializationException** can occur.
+
+
+## @Transactional
+
+@Transactional keeps the transaction/Persistence Context active during the service operation.
+
+Therefore lazy associations can generally be initialized inside the transaction.
+
+
+## Important
+
+LAZY ≠ always better
+EAGER ≠ always bad
+
+Fetch strategy should depend on the use case and required data.
+
+
+## EAGER does NOT solve N+1
+
+EAGER does not guarantee one JOIN query.
+
+EAGER associations can still result in inefficient SQL/query patterns.
+
+N+1 is a query design/fetching problem, not simply a LAZY problem.
+
+
+## Upcoming
+
+1. LAZY vs EAGER SQL experiment
+2. Lazy initialization
+3. LazyInitializationException
+4. N+1 problem
+5. JOIN FETCH
+6. EntityGraph
+7. DTO projection
 

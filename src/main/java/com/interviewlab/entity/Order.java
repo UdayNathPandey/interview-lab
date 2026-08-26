@@ -55,7 +55,11 @@ public class Order {
     private BigDecimal discount;
 
 //    @ManyToOne(cascade=CascadeType.PERSIST)
-    @ManyToOne(cascade=CascadeType.MERGE)
+//    @ManyToOne(cascade=CascadeType.MERGE)
+    @ManyToOne(
+            fetch=FetchType.LAZY
+//    fetch=FetchType.EAGER // by default
+    )
     @JoinColumn(name="customer_id")
     private Customer customer;
 

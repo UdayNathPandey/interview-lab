@@ -5865,4 +5865,66 @@ Flush
 Database
 ↓
 COMMIT
+# STEP 6.8.B — Transaction Rollback Rules
+
+## Default Spring Rollback Behavior
+
+RuntimeException
+↓
+ROLLBACK by default
+
+Checked Exception
+↓
+NO ROLLBACK by default
+
+
+## `rollbackFor`
+
+Used when a specific exception should trigger rollback even if Spring
+does not roll it back by default.
+
+Example:
+
+@Transactional(rollbackFor = Exception.class)
+
+Checked Exception
+↓
+ROLLBACK
+
+
+## `noRollbackFor`
+
+Used when a specific exception should NOT trigger rollback.
+
+Example:
+
+@Transactional(noRollbackFor = NoRollbackException.class)
+
+RuntimeException
+↓
+NO ROLLBACK
+
+
+## Experiments
+
+B1 — RuntimeException
+→ ROLLBACK ✅
+
+B2 — Checked Exception
+→ COMMIT by default ✅
+
+B3.1 — rollbackFor
+→ Checked Exception caused ROLLBACK ✅
+
+B3.2 — noRollbackFor
+→ Specified RuntimeException did NOT cause ROLLBACK ✅
+
+
+## Important Interview Point
+
+"Exception occurred" does NOT automatically mean "transaction
+rolled back".
+
+Rollback behavior depends on Spring's rollback rules and the
+exception type/configuration.
 

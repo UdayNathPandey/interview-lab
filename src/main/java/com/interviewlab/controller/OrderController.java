@@ -1,6 +1,9 @@
 package com.interviewlab.controller;
 
 import com.interviewlab.dto.*;
+import com.interviewlab.entity.Customer;
+import com.interviewlab.service.CustomerService;
+import com.interviewlab.service.InnerService;
 import com.interviewlab.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,7 @@ public class OrderController {
 
     //    @Autowired // we will use construtor injection instead of field autowiring
     private final OrderService orderService;
+    private final InnerService innerService;
 
 //    public OrderController(OrderService orderService)
 //    {
@@ -212,6 +216,38 @@ public class OrderController {
             throws Exception {
 
         orderService.testNoRollbackFor();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/test/required-propagation")
+    public ResponseEntity<Void> testRequiredPropagation(){
+
+        orderService.testRequired();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/test/requiresnew-propagation")
+    public ResponseEntity<Void> testRequiresNewPropagation(){
+
+        innerService.testRequiresNew();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/test/supports-with-transaction-propagation")
+    public ResponseEntity<Void> testSupportsPropagation(){
+
+        innerService.testSupportsWithTransaction();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/test/supports-without-transaction-propagation")
+    public ResponseEntity<Void> testSupportsWithoutTransactionPropagation(){
+
+        innerService.testSupportsWithoutTransaction();
 
         return ResponseEntity.ok().build();
     }

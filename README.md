@@ -5865,6 +5865,70 @@ Flush
 Database
 ↓
 COMMIT
+## What does a transaction contain?
+Transaction T1
+│
+├── DB connection/resource
+│
+├── Persistence Context
+│
+└── transaction synchronization
+## what does current thread contains?
+But ThreadLocal ko "transaction itself" mat samajhna
+
+Interview mein ye distinction strong rakhna:
+
+ThreadLocal
+≠
+Transaction
+
+Spring uses thread-bound context/resource association.
+
+Think:
+
+Thread
+↓
+"Current transaction resources ka address"
+↓
+Actual resource/transaction
+
+ThreadLocal is more like:
+
+"Is thread ke liye current transactional resources/context kahan milenge?"
+
+not:
+
+"ThreadLocal hi database transaction hai."
+## Transaction Internal working : 
+@Transactional
+↓
+Spring creates/uses a proxy
+↓
+Method invocation reaches TransactionInterceptor
+↓
+TransactionInterceptor asks TransactionManager
+↓
+Is there an existing transaction bound to current thread?
+↓
+Propagation policy is evaluated
+↓
+REQUIRED?
+├── existing → join
+└── none → create
+
+REQUIRES_NEW?
+├── existing → suspend
+└── create new
+↓
+Database transaction / connection participates
+↓
+Method executes
+↓
+Commit / rollback
+↓
+Suspended transaction is resumed if required
+
+
 # STEP 6.8.B — Transaction Rollback Rules
 
 ## Default Spring Rollback Behavior
@@ -5928,3 +5992,278 @@ rolled back".
 Rollback behavior depends on Spring's rollback rules and the
 exception type/configuration.
 
+## Propagation :
+
+## Propagation types :
+REQUIRED
+→ join existing or create new
+
+REQUIRES_NEW
+→ suspend existing → create independent transaction → resume existing
+
+SUPPORTS
+→ join if present, otherwise no transaction
+
+MANDATORY
+→ transaction must already exist
+
+NOT_SUPPORTED
+→ suspend existing and execute without transaction
+
+NEVER
+→ transaction must NOT exist
+# STEP 6.8.C — Transaction Propagation
+
+Transaction Propagation defines how a transactional method behaves
+when it is called while another transaction already exists.
+
+---
+
+## 1. REQUIRED ⭐⭐⭐
+
+Default propagation.
+
+Rule:
+
+Existing Transaction?
+YES → Join existing transaction
+NO  → Create new transaction
+
+Internal Flow:
+
+Method Call
+↓
+TransactionInterceptor
+↓
+Existing Transaction?
+├── YES → Join existing TX
+└── NO  → Create new TX
+
+Example:
+
+Transaction A
+↓
+Service A
+↓
+Service B (REQUIRED)
+↓
+Same Transaction A
+
+If Transaction A rolls back, work done by both services rolls back.
+
+Experiment:
+C1 passed.
+
+---
+
+## 2. REQUIRES_NEW ⭐⭐⭐
+
+Always execute using an independent transaction.
+
+If an existing transaction exists:
+
+```declarative
+Existing TX A
+↓
+SUSPEND A
+↓
+Create TX B
+↓
+Execute method
+↓
+Commit/Rollback B
+↓
+RESUME A
+
+Important:
+
+REQUIRES_NEW ≠ same transaction.
+
+It creates an independent transaction.
+
+Experiment:
+
+Outer Transaction A
+↓
+Customer INSERT
+↓
+Suspend A
+↓
+Inner Transaction B
+↓
+Order INSERT
+↓
+COMMIT B
+↓
+Resume A
+↓
+RuntimeException
+↓
+ROLLBACK A
+```
+Result:
+
+Outer Customer → ROLLBACK
+Inner Order    → COMMIT
+
+C2 passed.
+
+Important observation:
+
+Same thread does NOT necessarily mean same transaction.
+
+Transaction context/resources can change while the same thread
+continues execution.
+
+---
+
+## 3. SUPPORTS ⭐
+
+Rule:
+
+Existing Transaction?
+YES → Join it
+NO  → Execute without transaction
+
+Internal Flow:
+
+Method Call
+↓
+Existing TX?
+├── YES → JOIN
+└── NO  → NO TRANSACTION
+
+Mental shortcut:
+
+"Transaction hai to support karo, nahi hai to bhi chalo."
+
+C3 passed.
+
+---
+
+## 4. MANDATORY
+
+Requires an existing transaction.
+
+Existing TX?
+YES → Join
+NO  → Exception
+
+Flow:
+
+Call
+↓
+Existing TX?
+├── YES → Continue
+└── NO  → Exception
+
+---
+
+## 5. NOT_SUPPORTED
+
+The method must execute without a transaction.
+
+If a transaction already exists:
+
+Transaction A
+↓
+SUSPEND A
+↓
+Execute method WITHOUT transaction
+↓
+RESUME A
+
+If no transaction exists:
+
+Execute without transaction.
+
+---
+
+## 6. NEVER
+
+The method must execute without a transaction.
+
+Existing TX?
+YES → Exception
+NO  → Execute
+
+---
+
+## 7. NESTED
+
+Uses nested execution inside the existing transaction,
+typically using a database savepoint when supported.
+
+
+Flow:
+text
+```
+Transaction A
+↓
+NESTED method
+↓
+Create Savepoint
+↓
+Nested work
+↓
+Failure
+↓
+Rollback to Savepoint
+```
+
+
+Important difference:
+
+REQUIRES_NEW
+→ separate independent transaction
+
+NESTED
+→ same transaction + savepoint
+
+Actual NESTED behavior depends on transaction manager/database support.
+
+---
+
+# Interview Comparison
+
+| Propagation | Existing TX | No Existing TX |
+|---|---|---|
+| REQUIRED | Join | Create new |
+| REQUIRES_NEW | Suspend + new TX | Create new |
+| SUPPORTS | Join | No TX |
+| MANDATORY | Join | Exception |
+| NOT_SUPPORTED | Suspend + no TX | No TX |
+| NEVER | Exception | No TX |
+| NESTED | Savepoint/nested execution | Manager-dependent |
+
+---
+
+# Key Interview Points
+
+1. REQUIRED is the default propagation.
+2. REQUIRED joins an existing transaction or creates one.
+3. REQUIRES_NEW suspends the existing transaction and creates an
+   independent transaction.
+4. SUPPORTS never creates a transaction by itself.
+5. MANDATORY requires an existing transaction.
+6. NOT_SUPPORTED suspends the existing transaction and executes
+   without one.
+7. NEVER rejects execution if a transaction already exists.
+8. NESTED is based on nested execution/savepoints, not an entirely
+   independent transaction.
+9. Same thread does not mean same transaction.
+10. Transaction propagation is handled by Spring's transaction
+    infrastructure/interceptor around the proxied method.
+
+---
+
+# Experiments Completed
+
+C1 — REQUIRED
+→ Same transaction verified ✅
+
+C2 — REQUIRES_NEW
+→ Inner transaction committed while outer transaction rolled back ✅
+
+C3 — SUPPORTS
+→ Existing TX joined; without TX remained non-transactional ✅

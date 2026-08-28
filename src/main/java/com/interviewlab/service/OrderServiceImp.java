@@ -9,6 +9,7 @@ import com.interviewlab.repository.OrderRepository;
 //import jakarta.transaction.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.interviewlab.exception.NoRollbackException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import com.interviewlab.utility.Utility;
 
 
 @Service
@@ -28,6 +31,8 @@ public class OrderServiceImp implements OrderService{
 
 //    @Autowired // recommended to use constructor injection in production
     private final OrderRepository orderRepository;
+    private final CustomerService customerService;
+    private final Utility utility;
  // instead of writing constructor -> using @RequiredArgsConstructor
 //    public OrderServiceImp(OrderRepository orderRepository)
 //    {
@@ -617,4 +622,61 @@ public class OrderServiceImp implements OrderService{
         throw new NoRollbackException("Testing noRollbackFor");
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void testRequired() {
+
+        utility.printTransactionInfo("A - START");
+
+        System.out.println("OrderService started");
+
+        customerService.createCustomer();
+
+        Order order = Order.builder()
+                .customerName("Required2 Customer")
+                .customerEmail("required2@gmail.com")
+                .amount(new BigDecimal("5000.00"))
+                .discount(new BigDecimal("100.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+
+        utility.printTransactionInfo("A - AFTER B");
+
+        throw new RuntimeException("Testing REQUIRED rollback");
+
+//        System.out.println("OrderService completed");
+
+    }
+
+
+
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void createOrderInNewTransaction() {
+
+        utility.printTransactionInfo("B - START");
+
+        Order order = Order.builder()
+                .customerName("Inner Customer")
+                .customerEmail("inner@gmail.com")
+                .amount(new BigDecimal("12000.00"))
+                .discount(new BigDecimal("100.00"))
+                .status(OrderStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        orderRepository.save(order);
+
+        utility.printTransactionInfo("B - END");
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public void supportsMethod() {
+
+        utility.printTransactionInfo("SUPPORTS");
+    }
 }

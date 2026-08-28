@@ -1,6 +1,7 @@
 package com.interviewlab.service;
 
 import com.interviewlab.dto.*;
+import com.interviewlab.entity.Customer;
 
 import java.util.List;
 
@@ -30,6 +31,9 @@ public interface OrderService {
     void testCheckedExceptionRollback() throws Exception;
     void testRollbackFor() throws Exception;
     void testNoRollbackFor();
+    void testRequired();
+    void createOrderInNewTransaction();
+    void supportsMethod();
 
 
 }

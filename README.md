@@ -6267,3 +6267,123 @@ C2 — REQUIRES_NEW
 
 C3 — SUPPORTS
 → Existing TX joined; without TX remained non-transactional ✅
+# STEP 6.8.D — Spring AOP Proxy
+
+Spring uses AOP proxies around beans when cross-cutting behavior
+such as `@Transactional` needs to be applied.
+
+## Internal Working
+
+Caller
+↓
+Spring AOP Proxy
+↓
+TransactionInterceptor
+↓
+Start / Join Transaction
+↓
+Target Method
+↓
+Success → Commit
+Failure → Rollback according to rollback rules
+
+Therefore `@Transactional` is not simply a method-level switch.
+Spring's proxy/interceptor infrastructure applies the transactional
+behavior around the method invocation.
+
+---
+
+## AOP Proxy
+
+A Spring-managed service can be wrapped by a proxy.
+
+Conceptually:
+
+Controller
+↓
+Proxy
+↓
+Actual Service
+↓
+Method
+
+The proxy intercepts the method call and can execute additional
+behavior before/after the target method.
+
+Examples of cross-cutting concerns:
+
+- Transactions
+- Caching
+- Security
+- Logging
+- Other AOP advice
+
+---
+
+## Self-Invocation Problem ⭐⭐⭐
+
+Example:
+
+public void outerMethod() {
+this.innerMethod();
+}
+
+@Transactional
+public void innerMethod() {
+...
+}
+
+Flow:
+
+Proxy
+↓
+outerMethod()
+↓
+this.innerMethod()
+↓
+Target object directly
+
+The second call bypasses the Spring proxy.
+
+Therefore the `@Transactional` advice on `innerMethod()` is not
+applied through the proxy.
+
+Important:
+
+Method execution → YES
+AOP interception → NO
+
+---
+
+## Cross-Bean Invocation
+
+If another Spring bean calls the transactional method:
+
+Bean A
+↓
+Bean B Proxy
+↓
+TransactionInterceptor
+↓
+@Transactional method
+
+Then Spring's transactional advice can be applied.
+
+---
+
+## Key Interview Point
+
+`@Transactional` works through Spring's proxy-based AOP mechanism.
+
+Self-invocation can bypass the proxy, so annotations such as
+`@Transactional` may not be applied to the internally invoked method.
+
+---
+
+## Experiments Completed
+
+D1 — Spring AOP proxy existence verified ✅
+
+D2 — Self-invocation bypasses proxy verified ✅
+
+D3 — Cross-bean invocation passes through proxy verified ✅

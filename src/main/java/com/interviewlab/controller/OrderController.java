@@ -5,7 +5,9 @@ import com.interviewlab.entity.Customer;
 import com.interviewlab.service.CustomerService;
 import com.interviewlab.service.InnerService;
 import com.interviewlab.service.OrderService;
+import com.interviewlab.service.ProxyExperimentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -239,6 +241,11 @@ public class OrderController {
     @PostMapping("/test/supports-with-transaction-propagation")
     public ResponseEntity<Void> testSupportsPropagation(){
 
+        // to check the proxy
+        System.out.println(
+                "Is AOP proxy = "
+                        + AopUtils.isAopProxy(innerService));
+
         innerService.testSupportsWithTransaction();
 
         return ResponseEntity.ok().build();
@@ -247,9 +254,30 @@ public class OrderController {
     @PostMapping("/test/supports-without-transaction-propagation")
     public ResponseEntity<Void> testSupportsWithoutTransactionPropagation(){
 
+
         innerService.testSupportsWithoutTransaction();
 
         return ResponseEntity.ok().build();
     }
+    // testing AOP proxy
+
+    private final ProxyExperimentService proxyExperimentService;
+
+    @GetMapping("/test/test-proxy")
+    public ResponseEntity<String> testProxy()
+    {
+        System.out.println("Is Aop proxy = "+ AopUtils.isAopProxy(proxyExperimentService));
+        proxyExperimentService.innerMethod();
+        return ResponseEntity.ok("test-proxy successful");
+    }
+
+    @GetMapping("/test/test-proxy-self-call")
+    public ResponseEntity<String> testProxySelfCall()
+    {
+        System.out.println("Is Aop proxy = "+ AopUtils.isAopProxy(proxyExperimentService));
+        proxyExperimentService.outerMethod();
+        return ResponseEntity.ok("test-proxy-self-call successful");
+    }
+
 
 }

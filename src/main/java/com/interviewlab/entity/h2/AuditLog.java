@@ -1,4 +1,4 @@
-package com.interviewlab.entity;
+package com.interviewlab.entity.h2;
 
 import jakarta.persistence.*;
 import lombok.*;

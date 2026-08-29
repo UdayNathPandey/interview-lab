@@ -1,4 +1,4 @@
-package com.interviewlab.entity;
+package com.interviewlab.entity.mysql;
 
 public enum OrderStatus {
     PENDING,

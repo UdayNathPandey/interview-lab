@@ -7230,3 +7230,417 @@ H2 DataSource
 
 JPA EntityManagerFactory and TransactionManager are still
 separate configuration layers and will be connected next.
+# 6.1-B — DataSource → EntityManagerFactory → Repository
+
+## DataSource
+
+DataSource is an abstraction for obtaining database connections.
+
+Simple mental model:
+
+DataSource
+↓
+database connection
+↓
+Database
+
+In production, DataSource commonly works with a connection pool
+such as HikariCP.
+
+
+## EntityManagerFactory
+
+EntityManagerFactory is the JPA/Hibernate factory responsible for
+creating EntityManager instances and holding persistence/JPA
+configuration such as entity mappings.
+
+Mental model:
+
+Entity classes + JPA configuration + DataSource
+↓
+EntityManagerFactory
+↓
+EntityManager
+
+
+EntityManagerFactory:
+→ long-lived application-level object
+→ generally thread-safe
+
+EntityManager:
+→ used for persistence operations/unit of work
+→ not thread-safe
+
+
+## Repository
+
+Spring Data JPA provides repository implementations dynamically.
+
+Example:
+
+interface OrderRepository
+extends JpaRepository<Order, Long>
+
+We do not implement save(), findById(), delete(), etc. manually.
+
+Spring Data creates a repository proxy which internally uses
+EntityManager.
+
+Flow:
+
+Repository Proxy
+↓
+Spring Data JPA
+↓
+EntityManager
+↓
+Hibernate
+↓
+SQL
+↓
+DataSource
+↓
+Database
+
+
+## Default Single Database Setup
+
+With one DataSource, Spring Boot auto-configuration can create:
+
+application.properties
+↓
+DataSource
+↓
+EntityManagerFactory
+↓
+TransactionManager
+↓
+Spring Data JPA Repository
+↓
+Database
+
+This worked automatically in the original project because there
+was only one database/DataSource.
+
+
+## Why Multiple DataSources Need Explicit Configuration
+
+With two DataSources:
+
+MySQL DataSource
+H2 DataSource
+
+Spring cannot blindly know which DataSource should be used by
+which JPA persistence unit/repository.
+
+Therefore we explicitly configure:
+
+MySQL DataSource
+↓
+MySQL EntityManagerFactory
+↓
+OrderRepository
+
+H2 DataSource
+↓
+H2 EntityManagerFactory
+↓
+AuditLogRepository
+
+
+## @Qualifier
+
+When multiple beans of the same type exist:
+
+DataSource
+├── mysqlDataSource
+└── h2DataSource
+
+@Qualifier tells Spring exactly which bean should be injected.
+
+Example:
+
+@Qualifier("mysqlDataSource")
+
+
+## Entity Scanning
+
+Each EntityManagerFactory is configured with the entity package
+it owns.
+
+MySQL EMF
+↓
+entity.mysql
+↓
+Order
+
+H2 EMF
+↓
+entity.h2
+↓
+AuditLog
+
+
+## Transaction Manager
+
+Each persistence unit gets its own transaction manager:
+
+MySQL EMF
+↓
+MySQL TransactionManager
+
+H2 EMF
+↓
+H2 TransactionManager
+
+
+## Internal Working — Interview Flow
+```
+Repository
+↓
+EntityManager
+↓
+EntityManagerFactory
+↓
+DataSource
+↓
+Connection Pool
+↓
+Database
+
+Transaction:
+
+@Transactional
+↓
+Spring AOP Proxy
+↓
+TransactionInterceptor
+↓
+Selected TransactionManager
+↓
+Begin Transaction
+↓
+Repository operations
+↓
+Commit / Rollback
+Spring Boot default single-DB setup
+
+DataSource
+↓
+EntityManagerFactory
+↓
+TransactionManager
+↓
+Spring Data JPA
+↓
+Repository
+
+
+Multiple DB
+
+MySQL DataSource
+↓
+MySQL EntityManagerFactory
+↓
+MySQL TransactionManager
+↓
+OrderRepository
+
+
+H2 DataSource
+↓
+H2 EntityManagerFactory
+↓
+H2 TransactionManager
+↓
+AuditLogRepository
+```
+
+
+```
+Spring Boot default single-DB setup
+
+DataSource
+    ↓
+EntityManagerFactory
+    ↓
+TransactionManager
+    ↓
+Spring Data JPA
+    ↓
+Repository
+
+
+Multiple DB
+
+MySQL DataSource
+    ↓
+MySQL EntityManagerFactory
+    ↓
+MySQL TransactionManager
+    ↓
+OrderRepository
+
+
+H2 DataSource
+    ↓
+H2 EntityManagerFactory
+    ↓
+H2 TransactionManager
+    ↓
+AuditLogRepository
+```
+# 6.1-B — Repository → Correct Database
+
+Multiple database mapping:
+
+```declarative
+OrderRepository
+↓
+mysqlEntityManagerFactory
+↓
+mysqlDataSource
+↓
+MySQL
+
+
+AuditLogRepository
+↓
+h2EntityManagerFactory
+↓
+h2DataSource
+↓
+H2
+
+```
+
+## Proof Experiment
+
+AuditLogRepository.save()
+↓
+INSERT INTO audit_logs
+↓
+H2
+
+
+OrderRepository.save()
+↓
+INSERT INTO orders
+↓
+MySQL
+
+Therefore repositories were successfully mapped to their
+respective persistence units/databases.
+
+
+# 6.1-C — Multiple TransactionManagers
+
+With two databases we have two transaction managers:
+
+mysqlTransactionManager
+h2TransactionManager
+
+
+A transaction manager controls transactions for its associated
+persistence unit.
+
+
+MySQL:
+
+mysqlEntityManagerFactory
+↓
+mysqlTransactionManager
+↓
+MySQL transaction
+
+
+H2:
+
+h2EntityManagerFactory
+↓
+h2TransactionManager
+↓
+H2 transaction
+
+
+## @Primary
+
+When multiple TransactionManager beans exist, @Primary can mark
+one as the default candidate.
+
+Example:
+
+@Primary
+mysqlTransactionManager
+
+
+Therefore:
+
+@Transactional
+
+can use the primary transaction manager when no explicit manager
+is specified.
+
+
+## Explicit TransactionManager
+
+@Transactional("h2TransactionManager")
+
+explicitly selects the H2 transaction manager.
+
+
+## Internal Working
+
+```
+@Transactional
+↓
+Spring AOP Proxy
+↓
+TransactionInterceptor
+↓
+Selected TransactionManager
+↓
+EntityManagerFactory
+↓
+DataSource
+↓
+Database Transaction
+↓
+Commit / Rollback
+```
+
+
+## Critical Concept
+
+@Transactional does NOT automatically create one atomic
+transaction across multiple databases.
+
+Example:
+
+```declarative
+@Transactional
+↓
+mysqlTransactionManager
+↓
+MySQL transaction
+
+H2 is not automatically part of the same atomic transaction.
+
+```
+Multiple independent database transactions require distributed
+transaction mechanisms if true cross-database atomicity is required.
+
+
+## Distributed Transaction Concept
+
+```
+Multiple databases
+↓
+Distributed Transaction
+↓
+JTA / XA
+↓
+Two-Phase Commit (2PC)
+```
+JTA/XA implementation is outside the scope of this project;
+only the mechanism/concept is required for interviews.

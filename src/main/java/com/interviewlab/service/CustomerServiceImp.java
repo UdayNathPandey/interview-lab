@@ -1,13 +1,11 @@
 package com.interviewlab.service;
 
-import com.interviewlab.entity.Customer;
-import com.interviewlab.repository.CustomerRepository;
+import com.interviewlab.entity.mysql.Customer;
+import com.interviewlab.repository.mysql.CustomerRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.interviewlab.utility.Utility;
 
 @Service
 @RequiredArgsConstructor

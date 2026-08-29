@@ -14,7 +14,7 @@ public class MySqlDataSourceConfig {
 
     @Bean
     @Primary
-    @ConfigurationProperties(prefix = "spring.datasource")
+    @ConfigurationProperties(prefix = "spring.datasource.mysql")
     public DataSource mysqlDataSource()
     {
         return DataSourceBuilder

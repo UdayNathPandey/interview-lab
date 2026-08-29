@@ -1,9 +1,8 @@
 package com.interviewlab.controller;
 
 import com.interviewlab.dto.*;
-import com.interviewlab.entity.Customer;
-import com.interviewlab.service.CustomerService;
 import com.interviewlab.service.InnerService;
+import com.interviewlab.service.MultiDbTestService;
 import com.interviewlab.service.OrderService;
 import com.interviewlab.service.ProxyExperimentService;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +10,6 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.validation.Valid;
 import java.util.List;
 
@@ -278,6 +276,33 @@ public class OrderController {
         proxyExperimentService.outerMethod();
         return ResponseEntity.ok("test-proxy-self-call successful");
     }
+
+    private final MultiDbTestService multiDbTestService;
+
+    @PostMapping("/test/h2")
+    public ResponseEntity<Void> testH2() {
+
+        multiDbTestService.saveAudit();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/test/mysql")
+    public ResponseEntity<Void> testMysql() {
+
+        multiDbTestService.saveOrder();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/test/testTwoDatabases")
+    ResponseEntity<Void> testTwoDatabases() {
+
+        multiDbTestService.testTwoDatabases();
+
+        return ResponseEntity.ok().build();
+    }
+
 
 
 }

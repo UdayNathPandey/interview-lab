@@ -1,8 +1,8 @@
-package com.interviewlab.repository;
+package com.interviewlab.repository.mysql;
 
 import com.interviewlab.dto.OrderSummaryDto;
 import com.interviewlab.dto.OrderSummaryView;
-import com.interviewlab.entity.Order;
+import com.interviewlab.entity.mysql.Order;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;

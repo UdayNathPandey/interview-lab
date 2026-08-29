@@ -1,11 +1,11 @@
 package com.interviewlab.service;
 
 import com.interviewlab.dto.*;
-import com.interviewlab.entity.Customer;
-import com.interviewlab.entity.OrderStatus;
+import com.interviewlab.entity.mysql.Customer;
+import com.interviewlab.entity.mysql.OrderStatus;
 import com.interviewlab.exception.ResourceNotFoundException;
-import com.interviewlab.repository.CustomerRepository;
-import com.interviewlab.repository.OrderRepository;
+import com.interviewlab.repository.mysql.CustomerRepository;
+import com.interviewlab.repository.mysql.OrderRepository;
 //import jakarta.transaction.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -14,14 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.interviewlab.entity.Order;
+import com.interviewlab.entity.mysql.Order;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import com.interviewlab.exception.NoRollbackException;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import com.interviewlab.utility.Utility;
 
 

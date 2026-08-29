@@ -1,6 +1,6 @@
 package com.interviewlab.dto;
 
-import com.interviewlab.entity.OrderStatus;
+import com.interviewlab.entity.mysql.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

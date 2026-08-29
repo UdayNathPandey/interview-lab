@@ -1,7 +1,6 @@
 package com.interviewlab.dto;
 
-import com.interviewlab.entity.OrderStatus;
-import com.interviewlab.validation.ValidOrderDiscount;
+import com.interviewlab.entity.mysql.OrderStatus;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

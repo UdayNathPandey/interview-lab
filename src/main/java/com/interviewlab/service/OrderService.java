@@ -1,7 +1,6 @@
 package com.interviewlab.service;
 
 import com.interviewlab.dto.*;
-import com.interviewlab.entity.Customer;
 
 import java.util.List;
 

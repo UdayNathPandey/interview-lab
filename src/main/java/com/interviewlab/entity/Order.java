@@ -63,6 +63,9 @@ public class Order {
     @JoinColumn(name="customer_id")
     private Customer customer;
 
+    // testing optimistic locking -> will aut increment version with every update on that row
+    @Version
+    private Long version;
 
 }
 

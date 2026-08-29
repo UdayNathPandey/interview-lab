@@ -6387,3 +6387,750 @@ D1 — Spring AOP proxy existence verified ✅
 D2 — Self-invocation bypasses proxy verified ✅
 
 D3 — Cross-bean invocation passes through proxy verified ✅
+# STEP 6.8.E — Transaction Isolation Levels
+
+Isolation determines how concurrent transactions see each other's
+changes.
+
+Main problems:
+
+1. Dirty Read
+2. Non-repeatable Read
+3. Phantom Read
+
+
+## Dirty Read
+
+Transaction A changes data but has not committed.
+
+Transaction B reads that uncommitted value.
+
+A later rolls back.
+
+Therefore B saw data that was never committed.
+
+Isolation levels READ_COMMITTED and stronger prevent dirty reads.
+
+
+## Non-repeatable Read
+
+Transaction A reads the same row:
+
+First read  → amount = 1000
+
+Transaction B updates and commits:
+
+amount = 5000
+
+Transaction A reads again:
+
+Second read → amount = 5000
+
+Same row, different value within the transaction.
+
+
+## Phantom Read
+
+Transaction A executes:
+
+SELECT * FROM orders WHERE amount > 1000;
+
+Suppose it gets 5 rows.
+
+Transaction B inserts another matching row and commits.
+
+Transaction A executes the same query again and gets 6 rows.
+
+The newly appearing matching row is a phantom.
+
+
+## Isolation Levels
+
+| Isolation | Dirty Read | Non-repeatable Read | Phantom Read |
+|---|---|---|---|
+| READ_UNCOMMITTED | Possible | Possible | Possible |
+| READ_COMMITTED | No | Possible | Possible |
+| REPEATABLE_READ | No | No | DB-dependent |
+| SERIALIZABLE | No | No | No |
+
+MySQL/InnoDB commonly uses REPEATABLE READ as its default isolation
+level.
+
+Exact behavior can depend on the database and type of read.
+
+
+## Internal Working
+
+Transaction
+↓
+Isolation Level
+↓
+Database concurrency control
+↓
+MVCC / Locks
+↓
+Determines visibility of concurrent changes
+
+
+Spring example:
+
+@Transactional(isolation = Isolation.READ_COMMITTED)
+
+
+# STEP 6.8.F — Optimistic vs Pessimistic Locking
+
+## Lost Update
+
+Two transactions read the same old value.
+
+A → reads 12000
+B → reads 12000
+
+A → updates to 15000
+B → updates to 18000
+
+Without concurrency protection, B can overwrite A's update.
+
+This is the Lost Update problem.
+
+
+## Optimistic Locking
+
+Assumes conflicts are relatively uncommon.
+
+JPA:
+
+@Version
+private Long version;
+
+
+Database:
+
+id | amount | version
+227|12000   | 0
+
+
+A and B both read version 0.
+
+A updates:
+
+UPDATE ...
+SET amount=15000, version=1
+WHERE id=227 AND version=0;
+
+Success.
+
+B tries using version=0:
+
+UPDATE ...
+SET amount=18000, version=1
+WHERE id=227 AND version=0;
+
+No row matches because version is now 1.
+
+Therefore JPA detects the conflict and throws an optimistic locking
+exception.
+
+The second update does not silently overwrite the first update.
+
+
+## Optimistic Internal Flow
+
+Read entity
+↓
+Read version
+↓
+Modify entity
+↓
+UPDATE ... WHERE id=? AND version=?
+↓
+Version matches?
+├── YES → Update + increment version
+└── NO  → Optimistic locking failure
+
+
+## Pessimistic Locking
+
+Assumes concurrent conflict is possible and locks the database row
+before modification.
+
+Conceptually:
+
+SELECT ...
+FROM orders
+WHERE id=227
+FOR UPDATE;
+
+
+Flow:
+
+Transaction A
+↓
+Acquire row lock
+↓
+Modify row
+↓
+Transaction B tries same row
+↓
+B waits
+↓
+A commits/rolls back
+↓
+B can continue according to DB locking behavior.
+
+
+JPA example:
+
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+
+
+## Optimistic vs Pessimistic
+
+| | Optimistic | Pessimistic |
+|---|---|---|
+| Immediate DB lock | No | Yes |
+| Main mechanism | @Version | DB row lock |
+| Conflict handling | Detect later | Prevent/block concurrent access |
+| Typical use | Lower contention | Higher contention |
+| JPA example | @Version | @Lock(PESSIMISTIC_WRITE) |
+
+
+## Important Interview Difference
+
+Isolation answers:
+
+"What can concurrent transactions SEE?"
+
+Locking answers:
+
+"What happens when concurrent transactions try to
+modify/access the same data?"
+
+
+## Experiments
+
+E — Isolation concepts / READ_COMMITTED visibility verified
+
+F1 — @Version column + automatic version increment verified
+
+F2 — Concurrent update / lost update protection verified
+# STEP 6.8.E — Transaction Isolation Levels
+
+Isolation determines how concurrent transactions see each other's
+changes.
+
+## Important Read Phenomena
+
+### 1. Dirty Read
+
+Transaction A modifies data but does not commit.
+
+Transaction B reads that uncommitted value.
+
+If A rolls back, B had read a value that was never committed.
+
+Example:
+
+A:
+UPDATE amount = 7777
+(no COMMIT)
+
+B:
+SELECT amount
+
+If B sees 7777 → Dirty Read.
+
+READ_COMMITTED and stronger isolation levels prevent dirty reads.
+
+---
+
+### 2. Non-repeatable Read
+
+Transaction A reads the same row twice.
+
+First read:
+amount = 12000
+
+Transaction B:
+UPDATE amount = 8888
+COMMIT
+
+Second read by A:
+amount = 8888
+
+Same row, different value.
+
+---
+
+### 3. Phantom Read
+
+Transaction A executes:
+
+SELECT * FROM orders WHERE amount >= 1000;
+
+Suppose it gets 10 rows.
+
+Transaction B inserts another matching row and commits.
+
+A executes the same query again and gets 11 rows.
+
+The newly appearing matching row is a phantom.
+
+---
+
+## Non-repeatable vs Phantom
+
+Non-repeatable Read:
+→ Same row
+→ Value changed
+
+Phantom Read:
+→ Same query/predicate
+→ Matching row-set changed
+
+
+## Standard Isolation Levels
+
+| Isolation | Dirty Read | Non-repeatable Read | Phantom |
+|---|---|---|---|
+| READ_UNCOMMITTED | Possible | Possible | Possible |
+| READ_COMMITTED | No | Possible | Possible |
+| REPEATABLE_READ | No | No | DB-dependent |
+| SERIALIZABLE | No | No | No |
+
+MySQL/InnoDB commonly uses REPEATABLE_READ by default.
+
+Exact behavior depends on database and type of read.
+
+---
+
+## Internal Working
+
+Transaction
+↓
+Isolation Level
+↓
+Database concurrency control
+↓
+MVCC / Locks
+↓
+Determines what concurrent changes
+the transaction can see
+
+Spring can request an isolation level using:
+
+@Transactional(isolation = Isolation.READ_COMMITTED)
+
+
+# STEP 6.8.F — Optimistic & Pessimistic Locking
+
+## Lost Update
+
+Two transactions read the same old value.
+
+A → reads 12000
+B → reads 12000
+
+A → updates 15000
+B → updates 18000
+
+Without concurrency protection:
+
+Final value may become 18000.
+
+A's update was lost.
+
+---
+
+## Optimistic Locking
+
+Assumes conflicts are relatively uncommon.
+
+JPA:
+
+@Version
+private Long version;
+
+
+Database:
+
+id | amount | version
+227|12000   | 0
+
+
+Both transactions read version 0.
+
+A:
+
+UPDATE orders
+SET amount=15000, version=1
+WHERE id=227 AND version=0;
+
+Success.
+
+B:
+
+UPDATE orders
+SET amount=18000, version=1
+WHERE id=227 AND version=0;
+
+No row matches because DB version is now 1.
+
+Hibernate detects the conflict and throws an optimistic locking
+exception.
+
+Therefore the second transaction cannot silently overwrite the
+first update.
+
+---
+
+## Optimistic Internal Flow
+
+Read entity
+↓
+Read version
+↓
+Modify entity
+↓
+UPDATE ... WHERE id=? AND version=?
+↓
+Version matches?
+├── YES → Update + increment version
+└── NO  → Optimistic locking failure
+
+
+## Pessimistic Locking
+
+Assumes concurrent modification is possible and obtains a database
+lock before modification.
+
+JPA:
+
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+
+
+Conceptually:
+
+SELECT ...
+FROM orders
+WHERE id=?
+FOR UPDATE;
+
+
+Internal Flow:
+
+Transaction A
+↓
+Acquire row lock
+↓
+Modify
+↓
+Transaction B tries same row
+↓
+B waits
+↓
+A COMMIT / ROLLBACK
+↓
+Lock released
+↓
+B continues according to DB behavior
+
+
+## Optimistic vs Pessimistic
+
+| | Optimistic | Pessimistic |
+|---|---|---|
+| Lock immediately | No | Yes |
+| Main mechanism | @Version | DB row lock |
+| Conflict handling | Detect later | Block/prevent concurrent access |
+| Good for | Lower contention | Higher contention |
+| JPA example | @Version | @Lock(PESSIMISTIC_WRITE) |
+
+---
+
+## Important Interview Difference
+
+Isolation asks:
+
+"What can my transaction SEE?"
+
+Locking asks:
+
+"What happens when concurrent transactions
+try to access/modify the same data?"
+
+---
+
+## Experiments
+
+E1 — READ_COMMITTED prevented Dirty Read ✅
+
+E2 — READ_COMMITTED demonstrated Non-repeatable Read ✅
+
+E3 — Phantom Read demonstrated through changing matching row-set ✅
+
+F1 — @Version column added and version increment verified ✅
+
+F2 — Optimistic locking prevents lost update ✅
+
+F3 — Pessimistic write lock / row locking verified ✅
+# STEP 6.8.E — Transaction Isolation Levels
+
+Isolation determines how concurrent transactions see each other's
+changes.
+
+## Important Read Phenomena
+
+### 1. Dirty Read
+
+Transaction A modifies data but does not commit.
+
+Transaction B reads that uncommitted value.
+
+If A rolls back, B had read a value that was never committed.
+
+Example:
+
+A:
+UPDATE amount = 7777
+(no COMMIT)
+
+B:
+SELECT amount
+
+If B sees 7777 → Dirty Read.
+
+READ_COMMITTED and stronger isolation levels prevent dirty reads.
+
+---
+
+### 2. Non-repeatable Read
+
+Transaction A reads the same row twice.
+
+First read:
+amount = 12000
+
+Transaction B:
+UPDATE amount = 8888
+COMMIT
+
+Second read by A:
+amount = 8888
+
+Same row, different value.
+
+---
+
+### 3. Phantom Read
+
+Transaction A executes:
+
+SELECT * FROM orders WHERE amount >= 1000;
+
+Suppose it gets 10 rows.
+
+Transaction B inserts another matching row and commits.
+
+A executes the same query again and gets 11 rows.
+
+The newly appearing matching row is a phantom.
+
+---
+
+## Non-repeatable vs Phantom
+
+Non-repeatable Read:
+→ Same row
+→ Value changed
+
+Phantom Read:
+→ Same query/predicate
+→ Matching row-set changed
+
+
+## Standard Isolation Levels
+
+| Isolation | Dirty Read | Non-repeatable Read | Phantom |
+|---|---|---|---|
+| READ_UNCOMMITTED | Possible | Possible | Possible |
+| READ_COMMITTED | No | Possible | Possible |
+| REPEATABLE_READ | No | No | DB-dependent |
+| SERIALIZABLE | No | No | No |
+
+MySQL/InnoDB commonly uses REPEATABLE_READ by default.
+
+Exact behavior depends on database and type of read.
+
+---
+
+## Internal Working
+
+Transaction
+↓
+Isolation Level
+↓
+Database concurrency control
+↓
+MVCC / Locks
+↓
+Determines what concurrent changes
+the transaction can see
+
+Spring can request an isolation level using:
+
+@Transactional(isolation = Isolation.READ_COMMITTED)
+
+
+# STEP 6.8.F — Optimistic & Pessimistic Locking
+
+## Lost Update
+
+Two transactions read the same old value.
+
+A → reads 12000
+B → reads 12000
+
+A → updates 15000
+B → updates 18000
+
+Without concurrency protection:
+
+Final value may become 18000.
+
+A's update was lost.
+
+---
+
+## Optimistic Locking
+
+Assumes conflicts are relatively uncommon.
+
+JPA:
+
+@Version
+private Long version;
+
+
+Database:
+
+id | amount | version
+227|12000   | 0
+
+
+Both transactions read version 0.
+
+A:
+
+UPDATE orders
+SET amount=15000, version=1
+WHERE id=227 AND version=0;
+
+Success.
+
+B:
+
+UPDATE orders
+SET amount=18000, version=1
+WHERE id=227 AND version=0;
+
+No row matches because DB version is now 1.
+
+Hibernate detects the conflict and throws an optimistic locking
+exception.
+
+Therefore the second transaction cannot silently overwrite the
+first update.
+
+---
+
+## Optimistic Internal Flow
+
+Read entity
+↓
+Read version
+↓
+Modify entity
+↓
+UPDATE ... WHERE id=? AND version=?
+↓
+Version matches?
+├── YES → Update + increment version
+└── NO  → Optimistic locking failure
+
+
+## Pessimistic Locking
+
+Assumes concurrent modification is possible and obtains a database
+lock before modification.
+
+JPA:
+
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+
+
+Conceptually:
+
+SELECT ...
+FROM orders
+WHERE id=?
+FOR UPDATE;
+
+
+Internal Flow:
+
+Transaction A
+↓
+Acquire row lock
+↓
+Modify
+↓
+Transaction B tries same row
+↓
+B waits
+↓
+A COMMIT / ROLLBACK
+↓
+Lock released
+↓
+B continues according to DB behavior
+
+
+## Optimistic vs Pessimistic
+
+| | Optimistic | Pessimistic |
+|---|---|---|
+| Lock immediately | No | Yes |
+| Main mechanism | @Version | DB row lock |
+| Conflict handling | Detect later | Block/prevent concurrent access |
+| Good for | Lower contention | Higher contention |
+| JPA example | @Version | @Lock(PESSIMISTIC_WRITE) |
+
+---
+
+## Important Interview Difference
+
+Isolation asks:
+
+"What can my transaction SEE?"
+
+Locking asks:
+
+"What happens when concurrent transactions
+try to access/modify the same data?"
+
+---
+
+## Experiments
+
+E1 — READ_COMMITTED prevented Dirty Read ✅
+
+E2 — READ_COMMITTED demonstrated Non-repeatable Read ✅
+
+E3 — Phantom Read demonstrated through changing matching row-set ✅
+
+F1 — @Version column added and version increment verified ✅
+
+F2 — Optimistic locking prevents lost update ✅
+
+F3 — Pessimistic write lock / row locking verified ✅

@@ -3,9 +3,12 @@ package com.interviewlab.repository;
 import com.interviewlab.dto.OrderSummaryDto;
 import com.interviewlab.dto.OrderSummaryView;
 import com.interviewlab.entity.Order;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.*;
 
@@ -62,6 +65,10 @@ public interface OrderRepository extends JpaRepository<Order,Long> {
             
             """)
     List<OrderSummaryView> findOrderSummaryViews();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from Order o where o.id = :id")
+    Optional<Order> findByIdForUpdate(@Param("id") Long id);
 
 
 }

@@ -7134,3 +7134,99 @@ F1 — @Version column added and version increment verified ✅
 F2 — Optimistic locking prevents lost update ✅
 
 F3 — Pessimistic write lock / row locking verified ✅
+# LEVEL 6 — Multiple Databases
+
+## 6.1-A — Multiple DataSources
+
+### Goal
+
+Configure two databases in the same Spring Boot application:
+
+MySQL → Order data
+H2    → Audit data
+
+
+### Dependency
+
+Added H2 runtime dependency:
+
+com.h2database:h2
+
+MySQL dependency remains unchanged.
+
+
+### Architecture
+
+Spring Boot
+↓
+├── MySQL DataSource → MySQL DB
+│
+└── H2 DataSource → H2 DB
+
+
+### DataSource
+
+A DataSource represents/configures how the application obtains
+database connections.
+
+Flow:
+
+Repository
+↓
+EntityManager
+↓
+EntityManagerFactory
+↓
+DataSource
+↓
+Database
+
+
+### Configuration
+
+MySQL:
+
+spring.datasource.*
+
+H2:
+
+app.datasource.h2.*
+
+
+@ConfigurationProperties maps external configuration properties
+to the DataSource configuration.
+
+
+### @Primary
+
+When multiple beans of the same type exist, such as:
+
+MySQL DataSource
+H2 DataSource
+
+@Primary marks one bean as the default choice when Spring has
+multiple candidates and no @Qualifier is specified.
+
+
+### Internal Working
+
+application.properties
+↓
+@ConfigurationProperties
+↓
+DataSource Bean
+↓
+Connection Pool
+↓
+Database
+
+
+### Important
+
+At this stage we have only configured:
+
+MySQL DataSource
+H2 DataSource
+
+JPA EntityManagerFactory and TransactionManager are still
+separate configuration layers and will be connected next.

@@ -2,10 +2,7 @@ package com.interviewlab.dto;
 
 import com.interviewlab.entity.mysql.OrderStatus;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -14,6 +11,7 @@ import java.math.BigDecimal;
 @Setter
 @Getter
 
+@Builder
 
 public class UpdateOrderRequest {
     @NotBlank

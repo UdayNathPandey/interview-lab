@@ -2,6 +2,7 @@ package com.interviewlab;
 
 import com.interviewlab.dto.CreateOrderRequest;
 import com.interviewlab.dto.OrderResponse;
+import com.interviewlab.dto.UpdateOrderRequest;
 import com.interviewlab.entity.mysql.Order;
 import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.mysql.OrderRepository;
@@ -9,6 +10,7 @@ import com.interviewlab.service.OrderServiceImp;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -104,5 +106,125 @@ public class OrderServiceImpTest {
 
     }
 
+    @Test
+    void shouldSaveCorrectOrder() {
 
+        CreateOrderRequest request = CreateOrderRequest.builder()
+                .customerName("Test User")
+                .customerEmail("test@gmail.com")
+                .amount(new BigDecimal("1000.00"))
+                .build();
+
+        Mockito.when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocationOnMock-> invocationOnMock.getArgument(0));
+
+        orderServiceImp.createOrder(request);
+
+        // ab hme check krna h ki hmne correct order create kra h ya nhi
+        ArgumentCaptor<Order> argumentCaptor = ArgumentCaptor.forClass(Order.class);
+
+        Mockito.verify(orderRepository).save(argumentCaptor.capture());
+
+        Order savedOrder = argumentCaptor.getValue();
+
+        Assertions.assertEquals("Test User", savedOrder.getCustomerName());
+        Assertions.assertEquals(
+                "test@gmail.com",
+                savedOrder.getCustomerEmail());
+
+        Assertions.assertEquals(
+                new BigDecimal("1000.00"),
+                savedOrder.getAmount());
+
+
+    }
+
+    @Test
+    void shouldUpdateOrder() {
+
+        Order existingOrder = Order.builder()
+                .id(1L)
+                .customerName("Old Name")
+                .customerEmail("old@gmail.com")
+                .amount(new BigDecimal("1000.00"))
+                .build();
+
+        UpdateOrderRequest request =
+                UpdateOrderRequest.builder()
+                        .customerName("New Name")
+                        .customerEmail("new@gmail.com")
+                        .amount(new BigDecimal("2000.00"))
+                        .build();
+
+        Mockito.when(orderRepository.findById(1L))
+                .thenReturn(Optional.of(existingOrder));
+
+        Mockito.when(orderRepository.save(any(Order.class)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0));
+
+        orderServiceImp.updateOrder(1L, request);
+
+        ArgumentCaptor<Order> captor =
+                ArgumentCaptor.forClass(Order.class);
+
+        Mockito.verify(orderRepository)
+                .save(captor.capture());
+
+        Order updatedOrder = captor.getValue();
+
+        Assertions.assertEquals(
+                "New Name",
+                updatedOrder.getCustomerName());
+
+        Assertions.assertEquals(
+                "new@gmail.com",
+                updatedOrder.getCustomerEmail());
+
+        Assertions.assertEquals(
+                new BigDecimal("2000.00"),
+                updatedOrder.getAmount());
+    }
+
+    @Test
+    void shouldDeleteOrder() {
+
+        Order order = Order.builder()
+                .id(1L)
+                .build();
+        Mockito.when(orderRepository.findById(1L))
+                .thenReturn(Optional.of(order));
+
+        orderServiceImp.deleteOrder(1L);
+
+        Mockito.verify(orderRepository).findById(1L);
+        Mockito.verify(orderRepository).delete(order);
+
+    }
+
+    @Test
+    void shouldNotDeleteWhenOrderDoesNotExist() {
+
+        Mockito.when(orderRepository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        Assertions.assertThrows(
+                ResourceNotFoundException.class,
+                ()-> orderServiceImp.deleteOrder(999L)
+
+        );
+
+        Mockito.verify(
+                orderRepository,
+                        Mockito.times(1)
+                )
+                .findById(999L);
+
+        Mockito.verify(
+                orderRepository,
+                        Mockito.never()
+                )
+                .delete(any(Order.class));
+
+    }
 }

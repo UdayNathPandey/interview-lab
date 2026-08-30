@@ -7940,3 +7940,245 @@ For OrderService:
 → Spring context is normally not required
 
 This makes unit tests fast and focused on business logic.
+# 7.3 — Mockito: Real Project Service Testing
+
+## Core Pattern
+
+Class under test = REAL
+
+Dependencies = MOCK
+
+Example:
+
+OrderServiceImp
+↓
+Mock OrderRepository
+
+
+## @Mock
+
+Creates a Mockito mock of a dependency.
+
+@Mock
+OrderRepository orderRepository;
+
+The real repository/database is not used.
+
+
+## @InjectMocks
+
+Creates/injects the mocked dependencies into the class under test.
+
+@InjectMocks
+OrderServiceImp orderServiceImp;
+
+Conceptually:
+
+OrderServiceImp service =
+new OrderServiceImp(mockOrderRepository);
+
+
+## when().thenReturn()
+
+Defines behavior of a mock.
+
+when(orderRepository.findById(1L))
+.thenReturn(Optional.of(order));
+
+
+Meaning:
+
+When the service calls findById(1L), return the predefined
+result instead of accessing the database.
+
+
+## verify()
+
+Verifies that a dependency interaction happened.
+
+verify(orderRepository)
+.findById(1L);
+
+
+when()
+→ defines behavior
+
+verify()
+→ verifies interaction
+
+
+## ArgumentCaptor
+
+Used when we need to inspect the actual argument passed
+to a mocked dependency.
+
+Example:
+
+ArgumentCaptor<Order> captor =
+ArgumentCaptor.forClass(Order.class);
+
+verify(orderRepository)
+.save(captor.capture());
+
+Order savedOrder = captor.getValue();
+
+
+Flow:
+
+Service
+↓
+repository.save(order)
+↓
+ArgumentCaptor captures order
+↓
+captor.getValue()
+↓
+Verify entity fields
+
+
+## any()
+
+any(Order.class)
+
+Allows any Order object to be used as an argument.
+
+Example:
+
+verify(orderRepository)
+.save(any(Order.class));
+
+
+## never()
+
+Verifies that an interaction must NOT happen.
+
+verify(orderRepository, never())
+.delete(any(Order.class));
+
+
+Useful for negative scenarios.
+
+Example:
+
+Order not found
+↓
+Exception
+↓
+delete() must NOT be called
+
+
+## Common Service Tests
+
+### Create
+
+Request
+↓
+Service
+↓
+Order creation
+↓
+repository.save()
+↓
+ArgumentCaptor
+↓
+Verify saved entity
+
+
+### Update
+
+findById()
+↓
+Existing entity
+↓
+Modify entity
+↓
+save()
+↓
+ArgumentCaptor
+↓
+Verify updated fields
+
+
+### Delete
+
+findById()
+↓
+Existing entity
+↓
+delete()
+↓
+verify(delete())
+
+
+Not found:
+
+findById()
+↓
+Optional.empty()
+↓
+ResourceNotFoundException
+↓
+verify(delete(), never())
+
+
+## Internal Working
+
+@Test
+↓
+JUnit executes test
+↓
+MockitoExtension initializes mocks
+↓
+@Mock creates fake dependency
+↓
+@InjectMocks injects mock into service
+↓
+when() defines mock behavior
+↓
+Service executes real business logic
+↓
+Mock records interactions
+↓
+Assertions / verify / ArgumentCaptor
+↓
+PASS / FAIL
+
+
+## Key Principle
+
+Unit testing focuses on the class under test.
+
+For OrderService:
+
+REAL:
+→ OrderServiceImp
+
+MOCK:
+→ OrderRepository
+
+NOT USED:
+→ MySQL
+→ Hibernate
+→ EntityManager
+→ Spring ApplicationContext
+
+
+## Mockito Interview Summary
+
+@Mock
+→ creates fake dependency
+
+@InjectMocks
+→ injects fake dependency into class under test
+
+when()
+→ defines mock behavior
+
+verify()
+→ verifies interaction
+
+ArgumentCaptor
+→ captures and inspects method arguments
+
+never()
+→ verifies interaction did not happen

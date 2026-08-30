@@ -2,16 +2,15 @@ package com.interviewlab.dto;
 
 import com.interviewlab.validation.ValidOrderDiscount;
 import jakarta.validation.constraints.*; // ye package mai recall nhi kr paya
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
 import java.math.BigDecimal;
 
 @NoArgsConstructor// missed it - required by jackson
 @AllArgsConstructor
 @Setter
 @Getter
+@Builder
 
 @ValidOrderDiscount
 public class CreateOrderRequest {

@@ -7644,3 +7644,299 @@ Two-Phase Commit (2PC)
 ```
 JTA/XA implementation is outside the scope of this project;
 only the mechanism/concept is required for interviews.
+# LEVEL 7 — Testing
+
+## Goal
+
+Testing ka goal manually har baar application verify karne ke
+instead code ke expected behavior ko automatically verify karna hai.
+
+Flow:
+
+Code
+↓
+Test
+↓
+Expected vs Actual
+↓
+PASS / FAIL
+
+
+## Testing Levels
+
+### Unit Test
+
+Small unit/class ko isolate karke test karte hain.
+
+Example:
+
+OrderService
+↓
+Mock OrderRepository
+
+Usually:
+→ Spring context not required
+→ Database not required
+→ Mockito commonly used
+→ Very fast
+
+
+### Integration Test
+
+Multiple application components ko together test karte hain.
+
+Example:
+
+Controller
+↓
+Service
+↓
+Repository
+↓
+Test Database
+
+Spring context is commonly involved.
+
+Purpose:
+→ Components correctly integrate kar rahe hain ya nahi?
+
+
+## Unit vs Integration
+
+Unit:
+→ isolated
+→ fast
+→ dependencies mocked
+→ business logic focus
+
+Integration:
+→ multiple components
+→ real Spring wiring
+→ test database commonly used
+→ integration/wiring focus
+
+
+# 7.1 — JUnit 5
+
+JUnit is the Java testing framework used to define and execute
+tests and perform assertions.
+
+Dependency:
+
+spring-boot-starter-test
+
+It provides the common Spring Boot testing ecosystem including
+JUnit, Mockito, Spring Test, AssertJ, etc.
+
+
+## @Test
+
+@Test tells JUnit that a method should be executed as a test.
+
+Example:
+
+@Test
+void additionShouldWork() {
+int result = 2 + 3;
+assertEquals(5, result);
+}
+
+
+## Assertion
+
+assertEquals(expected, actual)
+
+Expected result is compared with actual result.
+
+Expected == Actual
+↓
+PASS
+
+Otherwise:
+FAIL
+
+
+## Internal Working
+
+Test class
+↓
+JUnit discovers @Test methods
+↓
+Test method executes
+↓
+Assertion checks expected vs actual
+↓
+PASS / FAIL
+
+
+# Mockito — Upcoming
+
+Mockito will allow us to replace real dependencies with mocks
+during unit testing.
+
+Example:
+
+OrderService
+↓
+Mock OrderRepository
+
+when(orderRepository.findById(1L))
+.thenReturn(Optional.of(order));
+
+
+Meaning:
+When the service calls findById(1L), the mock returns the
+predefined result instead of accessing the real database.
+# 7.2 — Mockito + OrderService Unit Testing
+
+## Goal
+
+Test OrderService business logic without starting Spring,
+Hibernate or connecting to MySQL.
+
+Production:
+
+Controller
+↓
+OrderService
+↓
+OrderRepository
+↓
+Hibernate
+↓
+MySQL
+
+
+Unit Test:
+
+JUnit
+↓
+OrderService
+↓
+Mock OrderRepository
+↓
+No Database
+
+
+## Mockito
+
+Mockito is used to create fake/mock dependencies during unit tests.
+
+Example:
+
+@Mock
+private OrderRepository orderRepository;
+
+The real repository is replaced by a Mockito mock.
+
+
+## @InjectMocks
+
+@InjectMocks
+private OrderServiceImp orderService;
+
+Mockito injects the mocked dependencies into the class being tested.
+
+Conceptually:
+
+OrderServiceImp
+↓
+Mock OrderRepository
+
+
+## @ExtendWith(MockitoExtension.class)
+
+Integrates Mockito with JUnit 5 and initializes Mockito
+annotations such as @Mock and @InjectMocks.
+
+A unit test does NOT need @SpringBootTest.
+
+
+## when().thenReturn()
+
+Defines mock behavior.
+
+when(orderRepository.findById(1L))
+.thenReturn(Optional.of(order));
+
+Meaning:
+
+When the service calls findById(1L), the mock returns the
+predefined Order instead of accessing the database.
+
+
+## assertThrows()
+
+Used to verify expected exceptions.
+
+assertThrows(
+ResourceNotFoundException.class,
+() -> orderService.getOrderById(999L)
+);
+
+
+## verify()
+
+Checks whether a dependency was called.
+
+verify(orderRepository)
+.findById(1L);
+
+
+## when() vs verify()
+
+when()
+→ defines mock behavior
+
+verify()
+→ verifies mock interaction
+
+
+## any()
+
+any(Order.class)
+
+Means any Order object is accepted as the argument.
+
+Example:
+
+when(orderRepository.save(any(Order.class)))
+.thenAnswer(...);
+
+
+## Internal Working
+```
+@Test
+↓
+JUnit executes test
+↓
+MockitoExtension initializes mocks
+↓
+@Mock creates mock dependency
+↓
+@InjectMocks injects mock into service
+↓
+when() configures mock behavior
+↓
+Service method executes
+↓
+Service talks to mock repository
+↓
+No real database
+↓
+Assertions / verify()
+↓
+PASS / FAIL
+```
+
+## Key Interview Point
+
+Unit testing isolates the class under test.
+
+For OrderService:
+→ Service is real
+→ Repository is mocked
+→ Database is not required
+→ Spring context is normally not required
+
+This makes unit tests fast and focused on business logic.

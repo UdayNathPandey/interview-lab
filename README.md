@@ -8449,3 +8449,212 @@ reduces tight coupling and makes unit testing easier."
 This is related to the Dependency Inversion Principle:
 high-level business logic should depend on abstractions rather
 than concrete implementation details.
+# 7.4 — Controller Testing: @WebMvcTest + MockMvc
+
+## Goal
+
+Test the Controller/API layer without starting the real database
+or testing the complete application.
+
+Production:
+
+HTTP Request
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+Database
+
+
+Controller Test:
+
+MockMvc
+↓
+Controller REAL
+↓
+Service MOCK
+
+
+## @WebMvcTest
+
+@WebMvcTest(OrderController.class)
+
+Loads the Spring MVC test slice required to test the controller.
+
+It focuses on MVC-related infrastructure rather than starting
+the complete application/database.
+
+Useful for testing:
+
+→ Request mapping
+→ Path variables
+→ Request body
+→ Validation
+→ HTTP status
+→ JSON response
+→ Controller-Service interaction
+
+
+## MockMvc
+
+MockMvc allows HTTP requests to be simulated without starting
+a real web server.
+
+Example:
+
+mockMvc.perform(
+get("/api/orders/1")
+);
+
+
+## Internal Flow
+
+mockMvc.perform()
+↓
+Mock HTTP Request
+↓
+DispatcherServlet
+↓
+Controller
+↓
+Mock Service
+↓
+Controller response
+↓
+JSON serialization
+↓
+MockMvc assertions
+
+
+## Controller + Mock Service
+
+Controller is REAL.
+
+Service is MOCK.
+
+Example:
+
+@MockBean
+OrderService orderService;
+
+
+Conceptually:
+
+MockMvc
+↓
+OrderController
+↓
+Mock OrderService
+
+
+## when()
+
+Defines the behavior of the mocked service.
+
+when(orderService.getOrderById(1L))
+.thenReturn(response);
+
+
+## verify()
+
+Verifies that the controller called the service correctly.
+
+verify(orderService)
+.getOrderById(1L);
+
+
+## jsonPath()
+
+Used to inspect JSON response fields.
+
+Example:
+
+.andExpect(
+jsonPath("$.id").value(1)
+);
+
+
+## POST Request
+
+Example:
+
+mockMvc.perform(
+post("/api/orders")
+.contentType(MediaType.APPLICATION_JSON)
+.content("""
+{
+"customerName": "Test User",
+"customerEmail": "test@gmail.com",
+"amount": 5000
+}
+""")
+)
+.andExpect(status().isCreated());
+
+
+contentType()
+→ tells server the request body format.
+
+content()
+→ provides the actual request body.
+
+
+## Validation Testing
+
+Invalid request:
+
+Request
+↓
+@Valid validation
+↓
+400 Bad Request
+↓
+Service should NOT be called
+
+
+Example:
+
+verify(orderService, never())
+.createOrder(any(CreateOrderRequest.class));
+
+
+## Service Unit Test vs Controller Test
+
+Service Unit Test:
+
+JUnit
+↓
+OrderService REAL
+↓
+Repository MOCK
+
+Focus:
+→ Business logic
+
+
+Controller Test:
+
+MockMvc
+↓
+OrderController REAL
+↓
+Service MOCK
+
+Focus:
+→ HTTP/API behavior
+→ Validation
+→ Status codes
+→ JSON
+→ Controller-Service interaction
+
+
+## Key Interview Point
+
+@WebMvcTest is a Spring MVC test slice used to test controller
+behavior without loading the complete application.
+
+MockMvc simulates HTTP requests and allows verification of
+controller responses without starting a real web server.

@@ -7,6 +7,7 @@ import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.mysql.CustomerRepository;
 import com.interviewlab.repository.mysql.OrderRepository;
 //import jakarta.transaction.Transactional;
+import com.interviewlab.utility.OrderUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.transaction.annotation.Propagation;
@@ -43,15 +44,21 @@ public class OrderServiceImp implements OrderService{
 
         // name, email and amount
         LocalDateTime now = LocalDateTime.now(); // agr create and update me ye function likhenge to time difference ho skta h
+        BigDecimal finalAmount =
+                calculateFinalAmount(
+                        orderRequestDto.getAmount(),
+                        orderRequestDto.getDiscount());
         Order order = Order
                 .builder()
                 .customerName(orderRequestDto.getCustomerName())
                 .customerEmail(orderRequestDto.getCustomerEmail())
-                .amount(orderRequestDto.getAmount())
+                .amount(finalAmount) // abhi k liye finalAmount rkha h private method ko test krne k liye
                 .status(OrderStatus.PENDING) // missed it
                 .createdAt(now) // missed it
                 .updatedAt(now) // missed it
                 .build();
+
+
         Order orderCreated = orderRepository.save(order);
 
         return OrderResponse.builder()
@@ -63,6 +70,18 @@ public class OrderServiceImp implements OrderService{
                 .createdAt(orderCreated.getCreatedAt())
                 .updatedAt(orderCreated.getUpdatedAt())
                 .build();
+    }
+    //adding this method to test private method testing / mocking
+    private BigDecimal calculateFinalAmount(
+            BigDecimal amount,
+            BigDecimal discount) {
+
+        return amount.subtract(discount);
+    }
+
+    // adding this method to test static method -> MockedStatic
+    public String generateReference(Long id) {
+        return OrderUtils.generateOrderReference(id);
     }
 
     @Override

@@ -8182,3 +8182,270 @@ ArgumentCaptor
 
 never()
 → verifies interaction did not happen
+
+# 7.3.5 — Private & Static Method Testing
+
+## Private Methods
+
+Private methods are implementation details of a class.
+
+Generally, private methods should NOT be tested directly.
+
+Instead:
+
+Public method
+↓
+Private method
+↓
+Observable result
+↓
+Assertion
+
+
+### Why?
+
+If tests directly depend on private implementation, changing
+the internal implementation can break tests even when public
+behavior remains unchanged.
+
+
+### Preferred Approach
+
+Test private logic indirectly through the public method.
+
+If a private method becomes complex enough to require
+independent testing, consider extracting the logic into a
+separate class/service and test that class independently.
+
+
+## Interview Answer
+
+"I generally don't test private methods directly. I test their
+behavior through the public method that uses them. If the private
+logic is complex enough to deserve independent testing, I would
+extract it into a separate class and test that class."
+
+
+# Static Methods
+
+Modern Mockito supports static method mocking using MockedStatic.
+
+Example:
+
+try (MockedStatic<OrderUtils> mocked =
+Mockito.mockStatic(OrderUtils.class)) {
+
+    mocked.when(() ->
+        OrderUtils.generateOrderReference(1L))
+        .thenReturn("MOCK-001");
+
+}
+
+
+## Static Mock Internal Flow
+
+Test
+↓
+Mockito.mockStatic()
+↓
+MockedStatic scope
+↓
+Static invocation intercepted
+↓
+Stubbed result returned
+↓
+Test completes
+↓
+MockedStatic closed
+↓
+Normal static behavior restored
+
+
+## Important Design Point
+
+Static mocking is technically possible, but excessive use of
+static dependencies can create tight coupling and make testing
+harder.
+
+Prefer injectable dependencies when practical.
+
+Instead of:
+
+OrderService
+↓
+OrderUtils.staticMethod()
+
+
+Prefer:
+
+OrderService
+↓
+OrderReferenceGenerator
+↓
+Injected implementation
+
+
+Then the dependency can be mocked normally using @Mock.
+
+
+# Private vs Static
+
+Private:
+→ Usually test indirectly
+→ Implementation detail
+→ Mockito normally does not mock private methods
+→ Extract complex logic if independent testing is needed
+
+
+Static:
+→ Modern Mockito can mock static methods
+→ Use MockedStatic
+→ Scope static mocks using try-with-resources
+→ Prefer injectable dependencies when practical
+
+
+# Interview Summary
+
+Private method:
+→ Test through public behavior.
+
+Static method:
+→ Mockito supports MockedStatic.
+→ But avoid unnecessary static dependencies.
+→ Prefer dependency injection when possible.
+# Dependency Injection vs Static Dependency
+
+## Static Dependency
+
+Example:
+
+OrderService
+↓
+OrderUtils.generateOrderReference()
+
+
+The service directly depends on a static utility.
+
+Problem:
+→ Tight coupling
+→ Harder to replace during unit testing
+→ Static mocking may be required
+
+
+## Injectable Dependency
+
+Prefer:
+
+OrderService
+↓
+OrderReferenceGenerator
+↓
+DefaultOrderReferenceGenerator
+
+
+OrderService depends on an abstraction/dependency instead of
+directly creating or calling a concrete implementation.
+
+
+Example:
+
+public interface OrderReferenceGenerator {
+String generate(Long orderId);
+}
+
+
+@Component
+public class DefaultOrderReferenceGenerator
+implements OrderReferenceGenerator {
+
+    @Override
+    public String generate(Long orderId) {
+        return "ORD-" + orderId;
+    }
+}
+
+
+Spring injects the implementation into OrderService through
+constructor injection.
+
+
+## Internal Working
+
+Application startup
+↓
+Spring scans @Component
+↓
+DefaultOrderReferenceGenerator bean created
+↓
+OrderService constructor requires
+OrderReferenceGenerator
+↓
+Spring finds matching implementation
+↓
+Dependency injected into OrderService
+
+
+## Testing Benefit
+
+Production:
+
+OrderService
+↓
+DefaultOrderReferenceGenerator
+
+
+Unit Test:
+
+OrderService
+↓
+Mock OrderReferenceGenerator
+
+
+Test:
+
+@Mock
+OrderReferenceGenerator generator;
+
+@InjectMocks
+OrderService orderService;
+
+
+Mockito can replace the real dependency with a mock without
+using static mocking.
+
+
+## Static vs Injectable
+
+Static:
+
+OrderService
+↓
+OrderUtils.staticMethod()
+
+→ tightly coupled
+→ static mocking may be required
+
+
+Injectable:
+
+OrderService
+↓
+OrderReferenceGenerator
+↓
+Implementation
+
+→ loosely coupled
+→ easy to mock with @Mock
+→ easier to replace implementation
+→ easier to unit test
+
+
+## Interview Point
+
+"Modern Mockito supports static mocking through MockedStatic,
+but I prefer dependency injection where practical because it
+reduces tight coupling and makes unit testing easier."
+
+This is related to the Dependency Inversion Principle:
+high-level business logic should depend on abstractions rather
+than concrete implementation details.

@@ -7644,6 +7644,270 @@ Two-Phase Commit (2PC)
 ```
 JTA/XA implementation is outside the scope of this project;
 only the mechanism/concept is required for interviews.
+# Multiple MySQL Databases in One Spring Boot Application
+```
+
+## 1. Basic Idea
+
+A single Spring Boot application can connect to multiple databases
+of the same database type.
+
+Example:
+
+Application
+    │
+    ├── MySQL Database 1
+    │       └── interview_lab
+    │
+    └── MySQL Database 2
+            └── audit_db
+
+
+Both databases use MySQL, but they are separate database/catalogs.
+
+They can have completely different:
+
+→ Tables
+→ Data
+→ Schemas
+→ Repositories
+→ Entities
+→ Transactions
+
+
+## 2. Important Distinction
+
+Database engine:
+
+MySQL
+
+Database 1:
+
+interview_lab
+
+Database 2:
+
+audit_db
+
+
+"MySQL" is the database engine.
+
+"interview_lab" and "audit_db" are two separate databases
+managed by the same MySQL server.
+
+
+Example:
+
+MySQL Server
+    │
+    ├── interview_lab
+    │       ├── orders
+    │       └── customer
+    │
+    └── audit_db
+            └── audit_logs
+
+
+## 3. Why Use Multiple Databases?
+
+Common real-world reasons:
+
+→ Separate business domains
+→ Separate audit/logging data
+→ Different data ownership
+→ Legacy database integration
+→ Different security/access requirements
+→ Independent database lifecycle
+
+
+Example:
+
+Business DB:
+
+interview_lab
+    ↓
+Customer
+Order
+Payment
+
+
+Audit DB:
+
+audit_db
+    ↓
+AuditLog
+AuditEvent
+
+
+## 4. Core Architecture
+
+Each database needs its own DataSource.
+
+Database 1:
+
+MySQL interview_lab
+        ↓
+DataSource 1
+        ↓
+EntityManagerFactory 1
+        ↓
+TransactionManager 1
+        ↓
+Repositories 1
+
+
+Database 2:
+
+MySQL audit_db
+        ↓
+DataSource 2
+        ↓
+EntityManagerFactory 2
+        ↓
+TransactionManager 2
+        ↓
+Repositories 2
+
+
+Complete flow:
+
+                         Spring Boot
+                              │
+               ┌──────────────┴──────────────┐
+               ↓                             ↓
+        DataSource 1                   DataSource 2
+               ↓                             ↓
+     EntityManagerFactory 1       EntityManagerFactory 2
+               ↓                             ↓
+     TransactionManager 1        TransactionManager 2
+               ↓                             ↓
+       OrderRepository             AuditLogRepository
+               ↓                             ↓
+        interview_lab                 audit_db
+```
+```
+# =========================
+# MySQL Database 1
+# =========================
+
+app.datasource.mysql.jdbc-url=jdbc:mysql://localhost:3306/interview_lab
+app.datasource.mysql.username=root
+app.datasource.mysql.password=root
+app.datasource.mysql.driver-class-name=com.mysql.cj.jdbc.Driver
+
+
+# =========================
+# MySQL Database 2
+# =========================
+
+app.datasource.audit.jdbc-url=jdbc:mysql://localhost:3306/audit_db
+app.datasource.audit.username=root
+app.datasource.audit.password=root
+app.datasource.audit.driver-class-name=com.mysql.cj.jdbc.Driver
+```
+```
+baki sara configuration same hoga h2 jaise alg datasource, entitymanager and transaction manager with different @EnableJpaRepository
+```
+```
+
+---
+
+# 17. Important Interview Questions
+
+### Q: Can one Spring Boot application connect to two MySQL databases?
+
+Yes.
+
+Configure:
+
+→ Two DataSources  
+→ Two EntityManagerFactories  
+→ Two transaction managers  
+→ Separate repository packages
+
+
+### Q: Can both databases use the same MySQL server?
+
+Yes.
+
+Example:
+
+localhost:3306
+    ├── interview_lab
+    └── audit_db
+
+
+### Q: Does each database require a separate DataSource?
+
+For independent JPA persistence units, yes, each database
+connection needs its own DataSource configuration.
+
+
+### Q: Why multiple EntityManagerFactories?
+
+Because each persistence unit needs its own JPA configuration and
+must know which DataSource and entities it manages.
+
+
+### Q: Why separate repository packages?
+
+To explicitly map repositories to the correct
+EntityManagerFactory.
+
+
+### Q: Why @Qualifier?
+
+Because multiple beans of the same type exist.
+
+
+### Q: Does @Transactional automatically span both databases?
+
+No.
+
+A normal Spring/JPA transaction manager controls its associated
+persistence context/DataSource.
+
+Atomic transactions across multiple databases require a
+distributed transaction strategy.
+
+
+# Key Mental Model
+
+Database:
+
+    DataSource
+        ↓
+    EntityManagerFactory
+        ↓
+    TransactionManager
+        ↓
+    Repository
+
+
+For two databases:
+
+DB1
+ ↓
+DataSource1
+ ↓
+EMF1
+ ↓
+TransactionManager1
+ ↓
+Repositories1
+
+
+DB2
+ ↓
+DataSource2
+ ↓
+EMF2
+ ↓
+TransactionManager2
+ ↓
+Repositories2
+```
+
 # LEVEL 7 — Testing
 
 ## Goal
@@ -8658,3 +8922,623 @@ behavior without loading the complete application.
 
 MockMvc simulates HTTP requests and allows verification of
 controller responses without starting a real web server.
+# 7.6 — Repository Testing / @DataJpaTest
+
+## Goal
+
+Test the Repository/JPA layer using a real JPA provider and
+test database without loading the complete application.
+
+Production:
+
+Controller
+↓
+Service
+↓
+Repository
+↓
+JPA / Hibernate
+↓
+MySQL
+
+
+Repository Test:
+
+@DataJpaTest
+↓
+Repository REAL
+↓
+EntityManager / JPA REAL
+↓
+Hibernate REAL
+↓
+H2 Test Database
+
+
+## @DataJpaTest
+
+@DataJpaTest is a Spring Boot test slice focused on JPA/database
+related components.
+
+It is useful for testing:
+
+→ Repository methods
+→ JPQL queries
+→ Derived queries
+→ Entity mappings
+→ JPA persistence behavior
+→ Hibernate-generated SQL
+
+
+## What is NOT the main focus?
+
+→ Controller
+→ Service business logic
+→ Real production MySQL
+
+
+## Service Test vs Repository Test
+
+Service Unit Test:
+
+OrderService REAL
+↓
+OrderRepository MOCK
+
+Focus:
+→ Business logic
+
+
+Repository Test:
+
+OrderRepository REAL
+↓
+Hibernate REAL
+↓
+H2 REAL
+
+Focus:
+→ Query correctness
+→ JPA mapping
+→ Persistence behavior
+
+
+## Internal Working
+
+@Test
+↓
+@DataJpaTest
+↓
+Spring JPA test slice
+↓
+Real Repository
+↓
+EntityManager
+↓
+Hibernate
+↓
+H2
+↓
+SQL
+↓
+Result
+↓
+Assertions
+↓
+Transaction rollback
+
+
+## Transaction Rollback
+
+Repository tests normally run inside a test transaction.
+
+Example:
+
+Test starts
+↓
+Transaction starts
+↓
+INSERT
+↓
+SELECT
+↓
+Assertions
+↓
+Test ends
+↓
+ROLLBACK
+
+
+This keeps test data isolated between tests.
+
+
+## save() vs flush()
+
+save():
+
+Entity
+↓
+Persistence Context
+
+
+flush():
+
+Persistence Context
+↓
+Hibernate
+↓
+SQL
+↓
+Database
+
+
+Calling flush() forces pending persistence operations to be
+synchronized with the database.
+
+
+## Custom Query Testing
+
+A mocked repository cannot prove that JPQL is correct.
+
+Example:
+
+@Query("""
+select o
+from Order o
+join fetch o.customer
+""")
+
+A repository test executes the real query:
+
+Test
+↓
+Real Repository
+↓
+JPQL
+↓
+Hibernate
+↓
+H2
+↓
+SQL
+↓
+Result
+
+
+Therefore repository tests are useful for validating custom
+JPQL queries and entity relationships.
+
+
+## H2 vs MySQL
+
+H2 is useful for fast repository tests, but H2 and MySQL are not
+identical databases.
+
+Differences can exist in:
+
+→ SQL syntax
+→ Data types
+→ Functions
+→ Constraints
+→ Dialect behavior
+→ Index behavior
+
+
+For strict production database compatibility, testing against
+the actual database engine (for example through Testcontainers)
+can be used.
+
+Testcontainers is outside the current scope of this step.
+
+
+## Important Project Note
+
+This project uses multiple DataSources / EntityManagerFactories:
+
+MySQL
+↓
+mysqlEntityManagerFactory
+↓
+MySQL repositories
+
+
+H2
+↓
+h2EntityManagerFactory
+↓
+H2 repositories
+
+
+Therefore @DataJpaTest may require explicit configuration or
+repository/entity-manager selection depending on the test setup.
+
+
+## Key Interview Point
+
+@DataJpaTest is used to test the JPA/repository layer in isolation
+from the rest of the application.
+
+Unlike a Mockito service test, the repository is real and the JPA
+provider/Hibernate actually executes the queries against a test
+database.
+## 7.6 Hands-on Experiments
+
+### Experiment A — Real Repository Query
+
+Flow:
+
+save()
+↓
+Real OrderRepository
+↓
+Hibernate
+↓
+H2
+↓
+findByCustomerName()
+↓
+Hibernate SELECT
+↓
+H2
+↓
+Result
+↓
+Assertions
+
+
+Important:
+
+No Mockito is used for the repository.
+
+Therefore the repository query is actually executed against
+the test database.
+
+This validates:
+
+→ Repository method
+→ Derived query / JPQL
+→ Entity mapping
+→ Hibernate SQL
+→ Database interaction
+
+
+### Experiment B — @DataJpaTest Rollback
+
+Typical flow:
+
+Test starts
+↓
+Test transaction starts
+↓
+Repository save()
+↓
+INSERT SQL
+↓
+Assertions
+↓
+Test completes
+↓
+Transaction rollback
+
+
+Therefore test data does not normally remain in the test
+database after the test completes.
+
+This provides isolation between repository tests.
+
+
+### save() vs flush()
+
+save():
+
+Entity
+↓
+Persistence Context
+
+
+flush():
+
+Persistence Context
+↓
+Hibernate
+↓
+SQL
+↓
+Database
+
+
+flush() forces pending persistence operations to be synchronized
+with the database.
+
+It is useful when we want to explicitly observe/force SQL execution
+during a repository test.
+
+
+## Repository Testing Internal Flow
+
+@DataJpaTest
+↓
+Test JPA configuration
+↓
+Embedded H2 DataSource
+↓
+EntityManagerFactory
+↓
+Hibernate
+↓
+Real Repository
+↓
+SQL
+↓
+H2
+↓
+Result
+↓
+Assertions
+↓
+Rollback
+
+
+## Service Test vs Repository Test
+
+Service Test:
+
+OrderService REAL
+↓
+OrderRepository MOCK
+
+Purpose:
+→ Test business logic
+
+
+Repository Test:
+
+OrderRepository REAL
+↓
+Hibernate REAL
+↓
+H2 REAL
+
+Purpose:
+→ Test repository/database behavior
+
+
+## Key Interview Point
+
+A Mockito-based service test does not prove that a repository query
+is correct because the repository is mocked.
+
+A @DataJpaTest executes the real repository and JPA query against a
+test database, making it suitable for validating repository and
+persistence behavior.
+# 7.7 — Integration Testing with @SpringBootTest
+
+## Goal
+
+Test multiple application layers together instead of testing
+only one layer in isolation.
+
+Typical flow:
+
+Controller
+↓
+Service
+↓
+Repository
+↓
+JPA / Hibernate
+↓
+Database
+
+
+## @SpringBootTest
+
+@SpringBootTest loads the Spring Boot application context and is
+used when broader application integration testing is required.
+
+It can load:
+
+→ Controllers
+→ Services
+→ Repositories
+→ JPA
+→ Configuration
+→ Other required Spring beans
+
+
+## Integration Test Architecture
+
+MockMvc
+↓
+REAL Controller
+↓
+REAL Service
+↓
+REAL Repository
+↓
+REAL EntityManager / JPA
+↓
+REAL Hibernate
+↓
+Database
+
+
+Unlike a Mockito service/controller test, the service and
+repository are not mocked.
+
+
+## Internal Flow
+
+Test
+↓
+@SpringBootTest
+↓
+Application Context
+↓
+MockMvc
+↓
+DispatcherServlet
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+EntityManager
+↓
+Hibernate
+↓
+SQL
+↓
+Database
+↓
+Result
+↓
+MockMvc Assertions
+
+
+## @SpringBootTest vs @WebMvcTest vs @DataJpaTest
+
+@WebMvcTest:
+
+MockMvc
+↓
+Controller
+↓
+Mock Service
+
+Purpose:
+→ Controller/API behavior
+
+
+@DataJpaTest:
+
+Repository
+↓
+Hibernate
+↓
+Test Database
+
+Purpose:
+→ Repository/JPA behavior
+
+
+@SpringBootTest:
+
+Controller
+↓
+Service
+↓
+Repository
+↓
+Hibernate
+↓
+Database
+
+Purpose:
+→ Integration between multiple application layers
+
+
+## Integration Test Example
+
+@SpringBootTest
+@AutoConfigureMockMvc
+
+@Autowired
+MockMvc mockMvc;
+
+
+mockMvc.perform(
+post("/api/orders")
+.contentType(MediaType.APPLICATION_JSON)
+.content(...)
+)
+.andExpect(status().isCreated());
+
+
+No @MockitoBean is used for the Service or Repository because
+the goal is to execute the real application flow.
+
+
+## Validation Integration Test
+
+Invalid request:
+
+MockMvc
+↓
+Controller
+↓
+@Valid
+↓
+Validation failure
+↓
+GlobalExceptionHandler
+↓
+400 Bad Request
+
+Service and Repository are not reached.
+
+
+## Integration Test vs End-to-End Test
+
+Integration Test:
+
+Application components
+↓
+tested together
+
+
+End-to-End Test:
+
+Real external/system boundary
+↓
+Real application
+↓
+Database/external systems
+
+
+MockMvc + @SpringBootTest is an integration testing approach;
+it does not necessarily represent a full browser/network-based
+end-to-end test.
+
+
+## Database Consideration
+
+Integration tests should normally avoid accidentally modifying
+production databases.
+
+Common approaches:
+
+→ Test profile
+→ H2
+→ Testcontainers
+→ Dedicated test database
+
+
+This project already contains multiple DataSources, therefore
+database selection must be considered explicitly when running
+@SpringBootTest.
+
+
+## Key Interview Point
+
+@SpringBootTest is used for broader integration testing where
+multiple real Spring application layers are executed together.
+
+A common flow is:
+
+Controller
+→ Service
+→ Repository
+→ JPA/Hibernate
+→ Database
+
+
+This complements:
+
+@WebMvcTest → Controller slice
+
+@DataJpaTest → Repository/JPA slice
+
+@SpringBootTest → Broader application integration

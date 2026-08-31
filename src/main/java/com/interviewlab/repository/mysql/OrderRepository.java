@@ -2,6 +2,7 @@ package com.interviewlab.repository.mysql;
 
 import com.interviewlab.dto.OrderSummaryDto;
 import com.interviewlab.dto.OrderSummaryView;
+import com.interviewlab.entity.mysql.Customer;
 import com.interviewlab.entity.mysql.Order;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -69,6 +70,8 @@ public interface OrderRepository extends JpaRepository<Order,Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select o from Order o where o.id = :id")
     Optional<Order> findByIdForUpdate(@Param("id") Long id);
+
+    List<Order> findByCustomerName(String name);
 
 
 }

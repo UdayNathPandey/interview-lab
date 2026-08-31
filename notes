@@ -1,0 +1,565 @@
+Pending:
+> spy in mockito unit testing
+>
+---------------------------------------------------------
+LEVEL 0
+Project Foundation
+        ↓
+LEVEL 1
+Java 8–21 + Clean Code
+        ↓
+LEVEL 2
+Spring Boot CRUD + Validation + Exception
+        ↓
+LEVEL 3
+JPA + Transactions + Entity Mapping
+        ↓
+LEVEL 4
+Caching + Pagination + Sorting + Filtering
+        ↓
+LEVEL 5
+Spring Security + JWT
+        ↓
+LEVEL 6
+AOP + Logging + Auditing
+        ↓
+LEVEL 7
+Testing — JUnit + Mockito + Integration Tests
+        ↓
+LEVEL 8
+Concurrency + Multithreading
+        ↓
+LEVEL 9
+External APIs + Feign + RestTemplate
+        ↓
+LEVEL 10
+Resilience + Production-grade Microservice
+
+------------------------------------------------------
+LEVEL 7 — Testing
+        │
+        ├── 7.1 Testing Fundamentals
+        │
+        ├── 7.2 JUnit 5
+        │
+        ├── 7.3 Mockito
+        │
+        ├── 7.4 Service Unit Testing + private and static methods
+        │
+        ├── 7.5 Controller Testing
+        │
+        ├── 7.6 Repository / @DataJpaTest
+        │
+        ├── 7.7 Integration Testing
+        │
+        └── 7.8 Testcontainers — short intro/experiment
+------------------------------------------------------
+STEP 6.1
+Entity Mapping Deep Dive
+        ↓
+STEP 6.2
+Relationships
+        ↓
+STEP 6.3
+Persistence Context + Entity Lifecycle
+        ↓
+STEP 6.4
+Dirty Checking
+        ↓
+STEP 6.5
+@Transactional
+        ↓
+STEP 6.6
+Rollback + Propagation
+        ↓
+STEP 6.7
+Isolation + Concurrency
+        ↓
+STEP 6.8
+LAZY vs EAGER
+        ↓
+STEP 6.9
+N+1 Problem
+        ↓
+STEP 6.10
+Fetch Join / EntityGraph
+        ↓
+STEP 6.11
+Cascade + orphanRemoval
+        ↓
+STEP 6.12
+Optimistic/Pessimistic Locking
+--------------------------------------------
+STEP 6.8
+│
+├── A. Transaction Basics
+│      ├── Transaction
+│      ├── @Transactional
+│      ├── Boundary
+│      ├── Commit/Rollback
+│      └── Persistence Context
+│
+├── B. Rollback Rules
+│      ├── RuntimeException
+│      ├── Checked Exception
+│      ├── rollbackFor
+│      └── noRollbackFor
+│
+├── C. Propagation
+│      ├── REQUIRED
+│      ├── REQUIRES_NEW
+│      ├── SUPPORTS
+│      └── others — theory/table
+│
+├── D. Proxy
+│      ├── Nested service calls
+│      ├── Self invocation
+│      └── Spring AOP proxy
+│
+├── E. Isolation
+│      ├── Isolation levels
+│      ├── Dirty read
+│      ├── Non-repeatable read
+│      └── Phantom read
+│
+└── F. Locking
+       ├── Optimistic
+       ├── @Version
+       ├── Lost update
+       └── Pessimistic
+---------------------------------------------------------------
+🔥 STEP 6.8 — Transactions & Transaction Management
+
+Hum 18 points ko 6 focused experiments mein cover karenge:
+
+Experiment	Topics
+A — Transaction Basics	1–4, 10–11
+B — Rollback Rules	5–7
+C — Propagation	8–9
+D — Self Invocation + Proxy	12–13
+E — Isolation	14–15
+F — Locking	16–18
+
+Is step mein:
+Transaction kya hoti hai?
+@Transactional actually internally kya karta hai
+Transaction boundary
+Commit vs Rollback
+Runtime vs checked exception
+rollbackFor
+noRollbackFor
+Transaction propagation
+REQUIRED
+REQUIRES_NEW
+SUPPORTS
+etc.
+Nested service calls
+Same transaction mein multiple repository operations
+Transaction + Persistence Context relationship
+Self-invocation problem
+Spring AOP proxy ka role
+Isolation levels
+Dirty read / non-repeatable read / phantom read
+Optimistic vs pessimistic locking
+@Version
+Lost update problem
+
+-------------------------------------------------------------
+🗺️ MASTER ROADMAP
+
+Ye roadmap ab freeze hai. Hum bina reason is order se bahar nahi jayenge.
+
+PHASE 1 — Project Foundation
+Step 1 ✅ DONE
+Spring Boot project
+Java 21
+Maven
+Basic dependencies
+/health API
+Git
+PHASE 2 — REST + CRUD Foundation
+Step 2 🔄 CURRENT PHASE
+Order domain
+Customer domain
+Entity
+DTO
+Repository
+Service
+Controller
+CRUD
+HTTP methods
+HTTP status codes
+DTO mapping
+
+Iske andar hum already:
+
+@ManyToOne
+@OneToMany
+@JoinColumn
+@Enumerated
+BigDecimal
+LocalDateTime
+@GeneratedValue
+
+touch kar chuke hain.
+
+Current sub-topic:
+JPA Entity Mapping
+        ↓
+LAZY / EAGER       ✅
+        ↓
+N+1                ← WE ARE HERE
+        ↓
+JOIN FETCH         ← NEXT
+        ↓
+EntityGraph
+        ↓
+DTO Projection
+PHASE 3 — Validation + Exception Handling
+
+CRUD foundation stable hone ke baad:
+
+@NotNull
+@NotBlank
+@NotEmpty
+@Size
+@Min / @Max
+@Positive
+@Pattern
+@Email
+@Past / @Future
+@Valid
+@Validated
+Custom Validator
+Class-level validation
+Validation groups
+
+Then:
+
+Custom Exception
+       ↓
+@ControllerAdvice
+       ↓
+@ExceptionHandler
+       ↓
+Standard Error Response
+PHASE 4 — JPA + Hibernate Deep Dive
+
+Ye tumhare current N+1 work ka larger phase hai.
+
+Persistence Context
+First-level cache
+Dirty Checking
+Entity lifecycle
+Transient
+Persistent
+Detached
+Removed
+
+Then:
+
+Cascade
+orphanRemoval
+mappedBy
+Owning side
+Bidirectional relationship
+
+Then:
+
+Transactions
+@Transactional
+Propagation
+Isolation
+Rollback
+Read-only
+Self invocation
+Spring Proxy
+
+Then database:
+
+Indexes
+Constraints
+Query optimization
+Lazy loading
+N+1
+JOIN FETCH
+EntityGraph
+DTO projection
+PHASE 5 — Pagination / Sorting / Filtering
+Pageable
+Page
+Slice
+Sorting
+Dynamic filtering
+Specification
+Criteria API
+
+Then performance implications:
+
+Pagination + JOIN FETCH
+Count query
+Large datasets
+Indexes
+PHASE 6 — Caching
+
+Tumhara planned Ehcache:
+
+Cache
+  ↓
+Ehcache
+  ↓
+@Cacheable
+@CachePut
+@CacheEvict
+
+Then:
+
+Cache hit
+Cache miss
+TTL
+Eviction
+Invalidation
+Cache consistency
+
+And interview comparison:
+
+Local Cache / Ehcache
+        vs
+Redis
+PHASE 7 — Spring Security + JWT
+Authentication
+Authorization
+SecurityFilterChain
+Filter
+SecurityContext
+PasswordEncoder
+BCrypt
+Roles
+Authorities
+
+JWT:
+
+Login
+ ↓
+Access Token
+ ↓
+Refresh Token
+ ↓
+Validation
+ ↓
+Expiration
+ ↓
+Logout
+ ↓
+Revocation
+
+Then role-based API protection.
+
+PHASE 8 — AOP + Production Cross-Cutting Concerns
+AOP
+@Before
+@After
+@Around
+@AfterReturning
+@AfterThrowing
+
+Use cases:
+
+Logging
+Execution time
+Audit
+Performance monitoring
+
+Then understand:
+
+Spring Proxy
+Self Invocation
+PHASE 9 — Testing
+JUnit 5
+Mockito
+
+Then:
+
+Unit tests
+Service tests
+Controller tests
+Repository tests
+MockMvc
+Integration tests
+@SpringBootTest
+Testcontainers
+
+Mockito:
+
+@Mock
+@InjectMocks
+when
+thenReturn
+verify
+ArgumentCaptor
+doThrow
+PHASE 10 — Java 8 → Java 21
+
+Important: Java features ko alag isolated theory chapter nahi banayenge.
+
+Project mein naturally use karenge.
+
+Java 8
+Lambda
+Functional Interface
+Stream API
+Optional
+Method Reference
+Default methods
+CompletableFuture
+Java 9–11
+Collection factory methods
+Stream improvements
+var
+String improvements
+HttpClient
+Java 12–17
+Switch expressions
+Text blocks
+Records
+Pattern matching
+Sealed classes
+Java 21
+Virtual Threads
+Pattern matching
+Record patterns
+Sequenced Collections
+
+Har feature ke saath:
+
+Problem
+   ↓
+Old Java approach
+   ↓
+New Java feature
+   ↓
+Why introduced?
+   ↓
+Trade-offs
+PHASE 11 — Multithreading / Concurrency
+
+Ye major interview phase hoga.
+
+Thread
+Runnable
+Callable
+Future
+
+Then:
+
+synchronized
+volatile
+Lock
+ReentrantLock
+ReadWriteLock
+Atomic classes
+
+Concurrent collections:
+
+ConcurrentHashMap
+CopyOnWriteArrayList
+BlockingQueue
+
+Then:
+
+ExecutorService
+ThreadPoolExecutor
+Core threads
+Maximum threads
+Queue
+RejectedExecutionHandler
+
+Then:
+
+Future
+CompletableFuture
+PHASE 12 — Async
+@Async
+ThreadPoolTaskExecutor
+Async configuration
+
+Then compare:
+
+@Async
+vs
+CompletableFuture
+vs
+ExecutorService
+vs
+Virtual Threads
+PHASE 13 — External API Communication
+RestTemplate
+Feign Client
+WebClient
+
+Understand:
+
+Synchronous call
+HTTP connection
+Connection pool
+Connect timeout
+Read timeout
+PHASE 14 — Resilience Patterns
+
+This will be one of the most interview-heavy phases.
+
+Timeout
+Retry
+Exponential Backoff
+Circuit Breaker
+Rate Limiter
+Bulkhead
+Fallback
+Time Limiter
+
+Flow:
+
+External API
+     ↓
+Timeout
+     ↓
+Retry
+     ↓
+Circuit Breaker
+     ↓
+Bulkhead / RateLimiter
+     ↓
+Fallback
+
+And importantly:
+
+Why blindly adding Retry can make an outage worse?
+
+We'll simulate that.
+
+PHASE 15 — Production Hardening
+
+Finally:
+
+Profiles
+Environment variables
+Secrets
+Configuration management
+Logging
+Actuator
+Health checks
+Metrics
+Correlation / Trace ID
+API documentation
+
+Then:
+
+Docker
+Database migration
+Flyway/Liquibase
+
+And eventually:
+
+Microservice architecture
+
+if needed.

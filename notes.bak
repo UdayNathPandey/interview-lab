@@ -38,32 +38,7 @@ Resilience + Production-grade Microservice
 
 ------------------------------------------------------
 
-LEVEL 8
-   │
-   ├── 8.1 Caching
-   │      ├── What is caching?
-   │      ├── Why caching?
-   │      ├── Spring Cache abstraction
-   │      ├── @Cacheable
-   │      ├── Cache hit / miss
-   │      ├── @CachePut
-   │      ├── @CacheEvict
-   │      ├── Cache key
-   │      ├── TTL/basic cache concepts
-   │      └── Redis overview
-   │
-   ├── 8.2 Pagination
-   │      ├── Pageable
-   │      ├── Page
-   │      └── SQL LIMIT/OFFSET
-   │
-   ├── 8.3 Sorting
-   │      └── Sort
-   │
-   └── 8.4 Filtering
-          ├── Derived queries
-          ├── @Query
-          └── Specification / dynamic filtering
+
 
 ------------------------------------------------------
 LEVEL 7 — Testing

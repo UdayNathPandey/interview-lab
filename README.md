@@ -9542,3 +9542,797 @@ This complements:
 @DataJpaTest → Repository/JPA slice
 
 @SpringBootTest → Broader application integration
+
+
+# LEVEL 8 — Caching + Pagination + Sorting + Filtering
+
+## 8.1 — Caching
+
+### What is Caching?
+
+Caching stores frequently accessed data in a faster storage layer
+so that repeated requests do not have to access the primary
+database every time.
+
+Without cache:
+
+Client
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+Database
+
+
+With cache:
+
+Client
+↓
+Controller
+↓
+Cache
+↓
+HIT → return cached result
+
+MISS
+↓
+Service
+↓
+Repository
+↓
+Database
+↓
+Result
+↓
+Cache
+↓
+Response
+
+
+## Why Cache?
+
+Main goal:
+
+→ Reduce database load
+→ Reduce response latency
+→ Improve application performance
+
+
+## Spring Cache
+
+Spring provides a cache abstraction.
+
+Common annotations:
+
+→ @Cacheable
+→ @CachePut
+→ @CacheEvict
+
+Spring Cache is an abstraction, not necessarily a specific cache
+database.
+
+Possible implementations include:
+
+→ Simple in-memory cache
+→ Caffeine
+→ Redis
+
+
+## @Cacheable
+
+@Cacheable("orders")
+
+Meaning:
+
+→ Check cache first.
+→ If value exists, return cached value.
+→ If value does not exist, execute method.
+→ Store method result in cache.
+→ Return result.
+
+
+Example:
+
+First call:
+
+getOrderById(209)
+↓
+Cache MISS
+↓
+Database
+↓
+Result
+↓
+Cache
+
+
+Second call:
+
+getOrderById(209)
+↓
+Cache HIT
+↓
+Return cached result
+
+The database method is not executed on a cache hit.
+
+
+## Internal Working
+
+Client
+↓
+Spring Cache Proxy
+↓
+Check Cache
+├── HIT
+│    ↓
+│  Return cached value
+│
+└── MISS
+↓
+Service method
+↓
+Repository
+↓
+Database
+↓
+Result
+↓
+Cache
+↓
+Response
+
+
+## Cache Key
+
+For:
+
+@Cacheable("orders")
+OrderResponse getOrderById(Long id)
+
+The method argument is used to determine the cache key by
+default.
+
+Conceptually:
+
+orders
+├── 209 → OrderResponse
+├── 210 → OrderResponse
+└── 211 → OrderResponse
+
+
+## Spring AOP Proxy Connection
+
+Caching annotations are applied through Spring's proxy mechanism.
+
+External call:
+
+Controller
+↓
+Spring Proxy
+↓
+Cached Service Method
+
+
+Self-invocation:
+
+Service
+↓
+this.cachedMethod()
+↓
+Proxy bypassed
+
+Therefore self-invocation can prevent @Cacheable interception.
+
+
+## Current Hands-on
+
+Experiment A:
+
+First request
+→ Cache MISS
+→ SQL executes
+→ Result cached
+
+Second identical request
+→ Cache HIT
+→ No repository/database query
+
+
+## Scope
+
+Interview-level caching topics:
+
+→ @Cacheable
+→ Cache hit/miss
+→ Cache keys
+→ @CachePut
+→ @CacheEvict
+→ Cache invalidation
+→ Redis basic architecture
+
+Advanced distributed caching topics are outside the current scope.
+```
+HTTP Request
+     ↓
+Spring Proxy
+     ↓
+@Cacheable interceptor
+     ↓
+Check cache
+     │
+     ├── HIT ──────→ return cached value
+     │
+     └── MISS
+           ↓
+      target service method
+           ↓
+      Repository
+           ↓
+      Hibernate
+           ↓
+      DB
+           ↓
+      result
+           ↓
+      cache.put()
+           ↓
+      return
+```
+```
+🔥 Ye interview mein bahut strong point hai:
+
+@Cacheable method ke andar cache check nahi karta; Spring proxy/interceptor method invocation se pehle cache check karta hai.
+🔥 Proxy h to self call se cache proxy by pass bhi ho jati/skti h
+Isliye cache hit hone par target method execute hi nahi hota.
+```
+## 8.1-B — @CachePut
+```
+### Core Idea
+
+@CachePut is used when the method should ALWAYS execute and
+its returned value should be stored/updated in the cache.
+
+Example:
+
+@CachePut(value = "orders", key = "#id")
+
+
+### Internal Flow
+
+Controller
+   ↓
+Spring Cache Proxy
+   ↓
+@CachePut
+   ↓
+Target method ALWAYS executes
+   ↓
+Repository
+   ↓
+Database
+   ↓
+Method return value
+   ↓
+Cache.put(key, result)
+   ↓
+Response
+
+
+### Example
+
+Update Order:
+
+PUT /api/orders/209
+
+        ↓
+updateOrder()
+        ↓
+DB updated
+        ↓
+OrderResponse returned
+        ↓
+Cache:
+orders[209] = updated OrderResponse
+
+
+### @Cacheable vs @CachePut
+
+@Cacheable:
+
+Cache HIT
+   ↓
+Method does NOT execute
+   ↓
+Cached value returned
+
+
+Cache MISS
+   ↓
+Method executes
+   ↓
+Result cached
+
+
+@CachePut:
+
+Method ALWAYS executes
+   ↓
+Result generated
+   ↓
+Cache updated
+
+
+### Typical Usage
+
+GET:
+
+@Cacheable
+    ↓
+Read from cache if available
+
+
+PUT:
+
+@CachePut
+    ↓
+Execute update
+    ↓
+Refresh cache
+
+
+DELETE:
+
+@CacheEvict
+    ↓
+Remove cache entry
+
+
+### Important Interview Point
+
+@CachePut does NOT skip method execution.
+
+It is primarily useful when the database is modified and the
+returned updated value should refresh the corresponding cache entry.
+
+**The cached value is normally the method's return value.**
+
+### Key Example
+
+Before update:
+
+orders
+  209 → amount 1000
+
+
+PUT /orders/209
+amount = 7777
+
+
+After @CachePut:
+
+orders
+  209 → amount 7777
+
+
+Subsequent GET:
+
+GET /orders/209
+   ↓
+Cache HIT
+   ↓
+7777
+```
+## 8.1-C — @CacheEvict
+
+### Purpose
+
+@CacheEvict removes an entry from the cache.
+
+Typical use case:
+
+DELETE /orders/{id}
+↓
+Database record deleted
+↓
+Corresponding cache entry removed
+
+
+### Internal Flow
+
+Controller
+↓
+Spring Cache Proxy
+↓
+@CacheEvict
+↓
+Target method
+↓
+Database DELETE
+↓
+Cache entry removed
+
+
+### Example
+
+@CacheEvict(value = "orders", key = "#id")
+public void deleteOrder(Long id) {
+...
+}
+
+
+Before:
+
+orders
+209 → OrderResponse
+
+
+DELETE /orders/209
+
+
+After:
+
+Database:
+209 → deleted
+
+Cache:
+209 → removed
+
+
+### Important Arguments
+
+value / cacheNames:
+
+Specifies the cache name.
+
+Example:
+
+value = "orders"
+
+
+key:
+
+Specifies which cache entry should be evicted.
+
+Example:
+
+key = "#id"
+
+
+allEntries:
+
+Removes all entries from the specified cache.
+
+Example:
+
+@CacheEvict(
+value = "orders",
+allEntries = true
+)
+
+
+beforeInvocation:
+
+Default = false.
+
+Normally eviction happens after successful method invocation.
+
+beforeInvocation = true causes eviction before method invocation.
+
+
+### Stale Cache Problem
+
+If database data is deleted/updated but the old cache entry remains:
+
+Database:
+209 → deleted
+
+Cache:
+209 → old OrderResponse
+
+Next request:
+
+GET /orders/209
+↓
+Cache HIT
+↓
+OLD DATA returned
+
+This is stale cache data.
+
+@CacheEvict helps invalidate the cache entry when data is
+deleted or otherwise becomes invalid.
+
+
+## Cache Storage — Current Hands-on
+
+Because no external cache such as Redis has been configured,
+the current simple cache can reside inside the application's JVM
+memory.
+
+Conceptually:
+
+JVM
+↓
+Spring CacheManager
+↓
+"orders" Cache
+↓
+key → value
+
+
+Example:
+
+orders
+├── 209 → OrderResponse
+├── 210 → OrderResponse
+└── 211 → OrderResponse
+
+
+Important:
+
+→ This cache is local to the application instance.
+→ It is not the MySQL database.
+→ Cache is lost when the application/JVM restarts.
+
+
+## Production
+
+For multiple application instances:
+
+App 1
+App 2
+App 3
+↓
+Shared Redis Cache
+↓
+Database
+
+Redis can provide a shared cache across application instances.
+
+Current project only covers Redis at interview-level overview.
+```
+🧠 Internal Spring flow
+Controller
+    ↓
+Spring AOP Proxy
+    ↓
+CacheInterceptor
+    │
+    ├── @Cacheable
+    │      ↓
+    │   check cache
+    │
+    ├── @CachePut
+    │      ↓
+    │   execute method
+    │      ↓
+    │   put result
+    │
+    └── @CacheEvict
+           ↓
+        execute/evict
+           ↓
+        remove key
+        
+current simple cache:
+
+Application JVM
+       ↓
+CacheManager
+       ↓
+Cache
+       ↓
+ConcurrentMap
+       ↓
+key → value
+
+Production alternative:
+
+Application
+     ↓
+Spring Cache abstraction
+     ↓
+Redis
+     ↓
+shared cache
+```
+## 8.1-D — Cache Invalidation, Stale Data & TTL
+```
+### Stale Cache
+
+Stale cache occurs when the database contains newer data than
+the cached value.
+
+Example:
+
+Database:
+Order 209 → amount 1000
+
+Cache:
+Order 209 → amount 1000
+
+
+Database gets updated:
+
+Database:
+Order 209 → amount 5000
+
+Cache:
+Order 209 → amount 1000
+
+
+GET /orders/209
+
+    ↓
+Cache HIT
+↓
+Old value 1000 returned
+
+
+The database is not checked on a normal cache hit.
+
+Therefore caching can introduce stale data.
+
+
+### Internal Working — Cache Hit
+
+Request
+↓
+Spring Cache Proxy
+↓
+Cache lookup
+↓
+HIT
+↓
+Return cached value
+
+The target service method and repository/database query are
+normally not executed on a cache hit.
+
+
+### Cache Invalidation
+
+Cache invalidation means removing or updating cached data when
+the cached value is no longer valid.
+
+UPDATE:
+
+Database update
+↓
+Cache update
+↓
+@CachePut
+
+
+DELETE:
+
+Database delete
+↓
+Cache removal
+↓
+@CacheEvict
+
+
+### TTL
+
+TTL = Time To Live.
+
+TTL defines how long a cache entry should remain valid.
+
+Example:
+
+TTL = 60 seconds
+
+Cache entry created
+↓
+60 seconds
+↓
+Entry expires
+↓
+Next request → Cache MISS
+↓
+Database
+↓
+New cache entry
+
+
+### Internal TTL Flow
+
+Cache.put(key, value)
+↓
+TTL starts
+↓
+Entry remains valid
+↓
+TTL expires
+↓
+Entry removed/expired
+↓
+Next request becomes CACHE MISS
+
+
+### Invalidation vs TTL
+
+Explicit invalidation:
+
+Data changes
+↓
+Application invalidates/updates cache
+
+
+TTL:
+
+Time passes
+↓
+Cache entry expires
+
+
+Therefore:
+
+Invalidation = change/event driven
+
+TTL = time driven
+
+
+### Common Cache Strategy
+
+READ:
+
+@Cacheable
+↓
+Cache HIT → return
+Cache MISS → DB → cache
+
+
+UPDATE:
+
+@CachePut
+↓
+DB update
+↓
+Cache refresh
+
+
+DELETE:
+
+@CacheEvict
+↓
+DB delete
+↓
+Cache removal
+
+
+TTL:
+
+    ↓
+Safety mechanism against entries remaining cached forever
+
+
+### Current Project
+
+The current hands-on uses Spring's simple in-memory cache.
+
+The cache resides inside the application JVM and is lost when
+the application restarts.
+
+Production applications may use cache implementations such as
+Caffeine or Redis, which provide more advanced cache features
+including configurable expiration/TTL.
+
+
+### Key Interview Point
+
+Caching trades some consistency complexity for performance.
+
+The application must consider:
+
+→ Cache invalidation
+→ Stale data
+→ TTL
+→ Cache consistency
+→ Cache eviction/update strategy
+```

@@ -10,6 +10,9 @@ import com.interviewlab.repository.mysql.OrderRepository;
 import com.interviewlab.utility.OrderUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -85,11 +88,15 @@ public class OrderServiceImp implements OrderService{
     }
 
     @Override
+    @Cacheable(value="orders" , key="#id")
     public OrderResponse getOrderById(Long id){
 
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: "+id));
         // orElseThrow lambda leta h ye miss hua
+
+        System.out.println("🔥 SERVICE METHOD EXECUTED");
+
         return OrderResponse.builder()
                 .id(order.getId())
                 .customerName(order.getCustomerName())
@@ -146,8 +153,10 @@ public class OrderServiceImp implements OrderService{
     }
 
     @Override
+    @CachePut(value="orders", key="#id")
     public OrderResponse updateOrder(Long id, UpdateOrderRequest updateOrderRequest)
     {
+        System.out.println("🔥 UPDATE METHOD EXECUTED");
         //check if requested user exist or not
         Order order = orderRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Order not found with Id "+id));
@@ -217,7 +226,14 @@ public class OrderServiceImp implements OrderService{
     }
 
     @Override
+    @CacheEvict(
+            value="orders"
+            , key="#id"
+//            , allEntries = true // useful when a change invalidate all cache
+//            , beforeInvocation = false // Meaning cache eviction normally happens after successful method invocation.
+            )
     public void deleteOrder(Long id){
+        System.out.println("🔥 DELETE METHOD EXECUTED");
         Order fetchOrder = orderRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Order not found with id "+id));
         orderRepository.delete(fetchOrder);

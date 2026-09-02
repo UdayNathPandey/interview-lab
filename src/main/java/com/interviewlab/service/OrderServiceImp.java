@@ -13,6 +13,8 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -109,7 +111,7 @@ public class OrderServiceImp implements OrderService{
     }
 
     @Override
-    public List<OrderResponse> getAllOrders()
+    public List<OrderResponse> getAllOrders(OrderStatus orderStatus ,Pageable pageable)
     {
 //        List<Order> allOrders = orderRepository.findAll();
 //        List<OrderResponse> allOrderResponse=new ArrayList<>();
@@ -127,15 +129,24 @@ public class OrderServiceImp implements OrderService{
 //
 //        }
         // yha maine by default for loop se solve kra , should have though about stream while processing collection
-
-        List<Order> orders = orderRepository.findAll();
-
-        for (Order order : orders) {
-            System.out.println(
-                    "Order ID = " + order.getId()
-                            + ", Customer = " + order.getCustomer().getName()
-            );
+        List<Order> orders;
+        if(orderStatus == null && pageable==null) {
+            orders = orderRepository.findAll();
         }
+        else if(orderStatus == null && pageable!=null)
+        {
+            orders= orderRepository.findAll(pageable).getContent();
+        }
+        else{
+            orders =orderRepository.findByStatus(orderStatus,pageable).getContent();
+        }
+
+//        for (Order order : orders) {
+//            System.out.println(
+//                    "Order ID = " + order.getId()
+//                            + ", Customer = " + order.getCustomer().getName()
+//            );
+//        }
 
 //        return orderRepository.findAll().stream() // ye @EntityGraph(attributePaths="customer") test krne k liye hataya
         return orders.stream()
@@ -148,9 +159,21 @@ public class OrderServiceImp implements OrderService{
                         .status(order.getStatus())
                         .createdAt(order.getCreatedAt())
                         .updatedAt(order.getUpdatedAt())
+                               .discount(order.getDiscount())
                         .build()
                 ).toList(); // toList() belongs to 16+
     }
+
+    // with page request
+//    @Override
+//    @Transactional(readOnly=true)
+//    public Page<Order> getAllOrders(Pageable pageable)
+//    {
+//        Page<Order> orders = orderRepository.findAll(pageable);
+//
+//        return orders;
+//
+//    }
 
     @Override
     @CachePut(value="orders", key="#id")

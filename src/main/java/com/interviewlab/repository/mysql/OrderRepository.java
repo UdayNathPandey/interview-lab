@@ -2,9 +2,11 @@ package com.interviewlab.repository.mysql;
 
 import com.interviewlab.dto.OrderSummaryDto;
 import com.interviewlab.dto.OrderSummaryView;
-import com.interviewlab.entity.mysql.Customer;
 import com.interviewlab.entity.mysql.Order;
+import com.interviewlab.entity.mysql.OrderStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -73,5 +75,10 @@ public interface OrderRepository extends JpaRepository<Order,Long> {
 
     List<Order> findByCustomerName(String name);
 
+    // default available in JpaRepository -> write to practice
+    Page<Order> findAll(Pageable pageable);
+
+//    @Query(value = "select * from orders where status=", nativeQuery = true)
+    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
 
 }

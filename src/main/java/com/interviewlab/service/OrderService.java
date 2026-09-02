@@ -1,13 +1,17 @@
 package com.interviewlab.service;
 
 import com.interviewlab.dto.*;
+import com.interviewlab.entity.mysql.Order;
+import com.interviewlab.entity.mysql.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface OrderService {
     OrderResponse createOrder(CreateOrderRequest orderRequestDto);
     OrderResponse getOrderById(Long id);
-    List<OrderResponse> getAllOrders();
+    List<OrderResponse> getAllOrders(OrderStatus orderStatus,Pageable pageable);
     OrderResponse updateOrder(Long id ,UpdateOrderRequest updateOrderRequest);
     OrderResponse patchOrder(Long id, PatchOrderRequest patchOrderRequest);
     void deleteOrder(Long id);
@@ -33,6 +37,7 @@ public interface OrderService {
     void testRequired();
     void createOrderInNewTransaction();
     void supportsMethod();
+//    Page<Order> getAllOrders(Pageable pageable);
 
 
 }

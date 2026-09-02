@@ -31,19 +31,8 @@ public class Customer {
 //            cascade=CascadeType.REMOVE
             orphanRemoval=true
 //            ,fetch=FetchType.EAGER
-            ,fetch=FetchType.LAZY
+            ,fetch=FetchType.LAZY // lazy rkhne pr bina dto wala pagination kam nhi krega kyoki json seriallize nhi ho pa rha
     )
     private List<Order> orders;
 }
 
-
-/***
- * INSERT INTO customer (id, customer_email, customer_name)
- * VALUES (10, 'john.doe@example.com', 'John Doe');
- *
- *
- * INSERT INTO customer (id, customer_email, customer_name)
- * VALUES (11, 'jane.smith@example.com', 'Jane Smith');
- *
- *
- */

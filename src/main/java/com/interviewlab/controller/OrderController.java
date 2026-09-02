@@ -1,12 +1,16 @@
 package com.interviewlab.controller;
 
 import com.interviewlab.dto.*;
+import com.interviewlab.entity.mysql.Order;
+import com.interviewlab.entity.mysql.OrderStatus;
 import com.interviewlab.service.InnerService;
 import com.interviewlab.service.MultiDbTestService;
 import com.interviewlab.service.OrderService;
 import com.interviewlab.service.ProxyExperimentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -52,10 +56,19 @@ public class OrderController {
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<List<OrderResponse>> getAllOrders() {
+    public ResponseEntity<List<OrderResponse>> getAllOrders(
+            @RequestParam(required=false) OrderStatus orderStatus
+            ,Pageable pageable) {
 //        List<OrderResponse> allOrders = orderService.getAllOrders();
-        return ResponseEntity.ok(orderService.getAllOrders());
+        return ResponseEntity.ok(orderService.getAllOrders(orderStatus,pageable));
     }
+
+//    // testing pagination, sorting and filtering
+//    @GetMapping("/orders")
+//    public ResponseEntity<Page<Order>> getAllOrders(Pageable pageable) {
+////        List<OrderResponse> allOrders = orderService.getAllOrders();
+//        return ResponseEntity.ok(orderService.getAllOrders(pageable));
+//    }
 
     @PutMapping("/orders/{id}")
     public ResponseEntity<OrderResponse> updateOrder(

@@ -31,6 +31,12 @@ public class OrderController {
 //        this.orderService=orderService;
 //    }
 
+    @GetMapping("/public/hello")
+    public ResponseEntity<String> hello()
+    {
+        return ResponseEntity.status(HttpStatus.OK).body("Hello from public endpoint");
+    }
+
     @PostMapping("/orders")
     public ResponseEntity<OrderResponse> createOrder(
             @RequestBody // missed it
@@ -59,6 +65,7 @@ public class OrderController {
     public ResponseEntity<List<OrderResponse>> getAllOrders(
             @RequestParam(required=false) OrderStatus orderStatus
             ,Pageable pageable) {
+        System.out.println("🔥 CONTROLLER CALLED");
 //        List<OrderResponse> allOrders = orderService.getAllOrders();
         return ResponseEntity.ok(orderService.getAllOrders(orderStatus,pageable));
     }

@@ -40,3 +40,12 @@ LEFT JOIN orders o
     ON c.id = o.customer_id
 ORDER BY c.id, o.id;
 
+INSERT INTO app_users
+(username, password, role, enabled)
+VALUES
+(
+    'uday',
+    '{bcrypt}$2a$10$pIlrFsAS2nwgW6a3JN/e2.MVfAeWpyU3Z5d6y6Z/99cgsbXvzWita',
+    'USER',
+    true
+);

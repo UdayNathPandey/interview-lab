@@ -39,6 +39,44 @@ Resilience + Production-grade Microservice
 
 ------------------------------------------------------
 
+9.1  Spring Security foundation
+       ↓
+9.2  Default security + first protected endpoint
+       ↓
+9.3  Authentication concepts
+       ↓
+9.4  UserDetailsService + DB user
+       ↓
+9.5  PasswordEncoder
+       ↓
+9.6  AuthenticationManager / Provider
+       ↓
+9.7  Login API
+       ↓
+9.8  JWT generation
+       ↓
+9.9  JWT validation
+       ↓
+9.10 JWT → SecurityContext
+       ↓
+9.11 Authorization / Roles
+       ↓
+9.12 Method-level security
+       ↓
+9.13 Refresh Token
+       ↓
+9.14 Logout / Token Revocation
+       ↓
+9.15 Exception handling
+       ↓
+9.16 Security testing
+       ↓
+9.17 Complete production-style flow
+       ↓
+9.18 FINAL README 🔥
+
+-------------------------------------------------------------
+
 LEVEL 8
    │
    ├── 8.1 Caching

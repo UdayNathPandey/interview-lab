@@ -30,4 +30,6 @@ public class AuthTestController {
         Authentication result = authenticationManager.authenticate(authentication);
         return ResponseEntity.status(HttpStatus.OK).body("Authenticated: "+result);
     }
+
+
 }

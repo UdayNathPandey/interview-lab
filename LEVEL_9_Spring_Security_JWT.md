@@ -390,3 +390,163 @@ JWT is NOT implemented yet.
 ## Status
 
 9.6 COMPLETE
+# LEVEL 9.7 — Login API
+
+## Goal
+
+Build a custom Login API using Spring Security's
+AuthenticationManager.
+
+The Login API will accept username and password,
+authenticate the user, and return a successful login response.
+
+JWT is NOT generated yet.
+JWT generation will be implemented in 9.8.
+
+---
+
+## Login Flow
+
+Client
+↓
+POST /auth/login
+↓
+LoginController
+↓
+AuthenticationManager
+↓
+ProviderManager
+↓
+DaoAuthenticationProvider
+↓
+UserDetailsService
+↓
+AppUserRepository
+↓
+MySQL
+↓
+UserDetails
+↓
+PasswordEncoder.matches()
+↓
+Authentication
+↓
+Login success response
+
+---
+
+## Important Classes
+
+LoginController
+↓
+AuthenticationManager
+↓
+ProviderManager
+↓
+DaoAuthenticationProvider
+↓
+UserDetailsService
+↓
+PasswordEncoder
+
+---
+
+## Important Concept
+
+The Login API does NOT manually check the password.
+
+It delegates authentication to AuthenticationManager.
+
+AuthenticationManager delegates to the appropriate
+AuthenticationProvider.
+
+For username/password authentication:
+
+AuthenticationManager
+↓
+ProviderManager
+↓
+DaoAuthenticationProvider
+
+DaoAuthenticationProvider uses:
+
+UserDetailsService → load user
+PasswordEncoder    → verify password
+
+---
+
+## Current Login API
+
+POST /auth/login
+
+Request:
+{
+"username": "uday",
+"password": "password"
+}
+
+Successful response:
+{
+"message": "Login successful",
+"username": "uday"
+}
+
+JWT is NOT returned yet.
+
+---
+
+## Important
+
+Login API performs authentication.
+
+Authorization will happen after authentication.
+
+JWT will be introduced in Level 9.8.
+
+---
+
+## Status
+
+9.7 COMPLETE
+```
+                 POST /auth/login
+                        │
+                        ▼
+                LoginController
+                        │
+                        │ username + password
+                        ▼
+          UsernamePasswordAuthenticationToken
+                        │
+                        ▼
+             AuthenticationManager
+                        │
+                        ▼
+                 ProviderManager
+                        │
+                        ▼
+           DaoAuthenticationProvider
+                  /             \
+                 /               \
+                ▼                 ▼
+     UserDetailsService     PasswordEncoder
+                │                 │
+                ▼                 │
+      AppUserRepository           │
+                │                 │
+                ▼                 │
+              MySQL               │
+                │                 │
+                ▼                 │
+           UserDetails ───────────┘
+                        │
+                        ▼
+              Authentication SUCCESS
+                        │
+                        ▼
+                 LoginController
+                        │
+                        ▼
+                LoginResponse
+```
+

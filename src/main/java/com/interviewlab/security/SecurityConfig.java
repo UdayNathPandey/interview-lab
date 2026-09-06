@@ -28,8 +28,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         authorizationManagerRequestMatcherRegistry ->
                                 authorizationManagerRequestMatcherRegistry
-                                        .requestMatchers(   "/api/public/**").permitAll()
-                                        .requestMatchers("/auth/test").permitAll()
+                                        .requestMatchers(   "/api/public/**","/auth/test").permitAll()
+//                                        .requestMatchers("/auth/test").permitAll()
+                                        .requestMatchers("/auth/login").permitAll()
                                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
@@ -68,7 +69,7 @@ public class SecurityConfig {
 //        };
 //    }
 
-    // for learning/inspection purpose
+    // for learning/inspection purpose -> it is by default set up by spring ,not really need to be added here
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authenticationConfiguration

@@ -1,4 +1,4 @@
-package com.interviewlab.service;
+package com.interviewlab.service.implementation;
 
 import com.interviewlab.dto.*;
 import com.interviewlab.entity.mysql.Customer;
@@ -7,13 +7,14 @@ import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.mysql.CustomerRepository;
 import com.interviewlab.repository.mysql.OrderRepository;
 //import jakarta.transaction.Transactional;
+import com.interviewlab.service.CustomerService;
+import com.interviewlab.service.OrderService;
 import com.interviewlab.utility.OrderUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,7 @@ import com.interviewlab.utility.Utility;
 
 @Service
 @RequiredArgsConstructor
-public class OrderServiceImp implements OrderService{
+public class OrderServiceImp implements OrderService {
 
 //    @Autowired // recommended to use constructor injection in production
     private final OrderRepository orderRepository;

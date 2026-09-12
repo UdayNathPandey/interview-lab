@@ -549,4 +549,131 @@ JWT will be introduced in Level 9.8.
                         ▼
                 LoginResponse
 ```
+````
+                    AuthenticationManager
+                       /            \
+                      /              \
+           HTTP Basic             Login API
+                ↓                    ↓
+         Authentication         Authentication
+            request                request
+                      \            /
+                       ↓          ↓
+                   ProviderManager
+                         ↓
+               DaoAuthenticationProvider
+                         ↓
+                UserDetailsService
+                         ↓
+                      MySQL
+````
+# LEVEL 9.8 — JWT Generation
 
+## Goal
+
+Understand and implement JWT generation after successful
+username/password authentication.
+
+JWT is generated only after AuthenticationManager successfully
+authenticates the user.
+
+---
+
+## Core Flow
+
+Client
+↓
+POST /auth/login
+↓
+LoginController
+↓
+AuthenticationManager
+↓
+ProviderManager
+↓
+DaoAuthenticationProvider
+↓
+UserDetailsService
+↓
+MySQL
+↓
+PasswordEncoder
+↓
+Authentication SUCCESS
+↓
+JwtService
+↓
+JWT generated
+↓
+LoginResponse
+↓
+Client
+
+---
+
+## JWT Structure
+
+JWT consists of three Base64URL-encoded parts:
+
+HEADER.PAYLOAD.SIGNATURE
+
+Header:
+Algorithm + Token Type
+
+Payload:
+Claims such as subject, authorities, expiration
+
+Signature:
+Cryptographic signature used to verify token integrity
+
+---
+
+## Important
+
+JWT is signed, not encrypted.
+
+The payload should not contain sensitive secrets such as
+passwords.
+
+The client can decode the JWT payload, but cannot modify it
+without invalidating the signature.
+
+---
+
+## Authentication vs JWT
+
+Authentication:
+"Who are you and are your credentials valid?"
+
+JWT:
+"Here is a signed token representing the authenticated identity."
+
+---
+
+## Current Experiment
+
+Login API:
+
+POST /auth/login
+
+Request:
+{
+"username": "uday",
+"password": "password"
+}
+
+Successful response:
+
+{
+"message": "Login successful",
+"username": "uday",
+"token": "<JWT>"
+}
+
+JWT validation/filter processing will be implemented in 9.9.
+
+---
+
+## Status
+
+9.8 COMPLETE

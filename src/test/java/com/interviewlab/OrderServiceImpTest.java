@@ -6,7 +6,7 @@ import com.interviewlab.dto.UpdateOrderRequest;
 import com.interviewlab.entity.mysql.Order;
 import com.interviewlab.exception.ResourceNotFoundException;
 import com.interviewlab.repository.mysql.OrderRepository;
-import com.interviewlab.service.OrderServiceImp;
+import com.interviewlab.service.implementation.OrderServiceImp;
 import com.interviewlab.utility.OrderUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

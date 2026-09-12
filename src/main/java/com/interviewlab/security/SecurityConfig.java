@@ -33,7 +33,7 @@ public class SecurityConfig {
                                         .requestMatchers("/auth/login").permitAll()
                                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(Customizer.withDefaults()) // header me username password send krne k liye
                 .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable()) // iske bina security chal nhi rhi h
                 .build();
     }

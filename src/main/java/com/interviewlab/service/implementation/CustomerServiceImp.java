@@ -1,7 +1,8 @@
-package com.interviewlab.service;
+package com.interviewlab.service.implementation;
 
 import com.interviewlab.entity.mysql.Customer;
 import com.interviewlab.repository.mysql.CustomerRepository;
+import com.interviewlab.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -9,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class CustomerServiceImp implements CustomerService{
+public class CustomerServiceImp implements CustomerService {
 
     private final CustomerRepository customerRepository;
 

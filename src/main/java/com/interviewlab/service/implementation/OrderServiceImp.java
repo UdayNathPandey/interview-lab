@@ -16,6 +16,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -256,6 +257,8 @@ public class OrderServiceImp implements OrderService {
 //            , allEntries = true // useful when a change invalidate all cache
 //            , beforeInvocation = false // Meaning cache eviction normally happens after successful method invocation.
             )
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public void deleteOrder(Long id){
         System.out.println("🔥 DELETE METHOD EXECUTED");
         Order fetchOrder = orderRepository.findById(id)

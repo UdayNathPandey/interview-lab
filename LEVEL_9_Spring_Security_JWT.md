@@ -677,3 +677,358 @@ JWT validation/filter processing will be implemented in 9.9.
 ## Status
 
 9.8 COMPLETE
+# LEVEL 9.9 — JWT Validation
+
+## Goal
+
+Validate a JWT received from the client and convert the
+validated JWT into an authenticated Spring Security context.
+
+---
+
+## Core Flow
+
+Client
+↓
+Authorization: Bearer <JWT>
+↓
+Spring Security Filter Chain
+↓
+Bearer Token Authentication
+↓
+JWT validation
+↓
+Signature verification
+↓
+Expiration / claims validation
+↓
+Authenticated identity
+↓
+SecurityContextHolder
+↓
+Authorization
+↓
+Controller
+
+---
+
+## JWT Validation Checks
+
+1. Token exists
+2. Token structure is valid
+3. Signature is valid
+4. Token is not expired
+5. Required claims are valid
+
+---
+
+## Important
+
+JWT validation is different from login authentication.
+
+Login:
+username + password
+↓
+AuthenticationManager
+↓
+Authentication
+↓
+JWT generation
+
+Subsequent request:
+JWT
+↓
+JWT validation
+↓
+Authentication
+↓
+SecurityContext
+
+The server does not need to query the database for the password
+on every JWT request.
+
+---
+
+## SecurityContext
+
+After successful JWT validation, Spring Security creates an
+authenticated Authentication object and stores it in the
+SecurityContextHolder for the current request.
+
+Then:
+
+authenticated()
+↓
+allows authorized request
+
+---
+
+## 401 vs 403
+
+Invalid/missing JWT:
+→ 401 Unauthorized
+
+Authenticated user without required authority:
+→ 403 Forbidden
+
+---
+
+## Current Experiment
+
+Login:
+POST /auth/login
+
+Then use:
+
+Authorization: Bearer <JWT>
+
+to access:
+
+GET /api/orders
+
+JWT validation is performed before the Controller executes.
+
+---
+```
+             JWT
+              │
+      ┌───────┴────────┐
+      ▼                ▼
+   Payload          Signature
+      │                │
+      │                │
+ readable          verifiable
+      │                │
+      └───────┬────────┘
+              ▼
+        Server verifies
+              │
+       valid signature?
+              │
+        ┌─────┴─────┐
+        ▼           ▼
+       YES          NO
+        │            │
+        ▼            ▼
+ Authentication     Reject
+```
+## complete flow
+```
+                    LOGIN
+                      │
+                      ▼
+             POST /auth/login
+                      │
+                      ▼
+               LoginController
+                      │
+                      ▼
+            AuthenticationManager
+                      │
+                      ▼
+             DaoAuthenticationProvider
+                  /           \
+                 /             \
+                ▼               ▼
+       UserDetailsService   PasswordEncoder
+                │
+                ▼
+              MySQL
+                │
+                ▼
+         Authentication
+                │
+                ▼
+            JwtService
+                │
+                ▼
+               JWT
+                │
+                ▼
+              CLIENT
+                │
+                │ Authorization:
+                │ Bearer <JWT>
+                ▼
+              REQUEST
+                │
+                ▼
+       Spring Security Filters
+                │
+                ▼
+      JwtAuthenticationFilter
+                │
+                ▼
+          JwtService
+                │
+                ▼
+      Signature + Claims validation
+                │
+                ▼
+          Authentication
+                │
+                ▼
+       SecurityContextHolder
+                │
+                ▼
+           Authorization
+                │
+                ▼
+        DispatcherServlet
+                │
+                ▼
+            Controller
+```
+
+## Status
+
+9.9 COMPLETE
+# BLOCK 1 — JWT SecurityContext + Authorization + Method Security
+
+## Covered
+
+9.10 JWT → SecurityContext
+9.11 Authorization / Roles
+9.12 Method-level security
+
+---
+
+## Core Request Flow
+
+Client
+↓
+Authorization: Bearer <JWT>
+↓
+JwtAuthenticationFilter
+↓
+JWT validation
+↓
+Extract username
+↓
+Load UserDetails
+↓
+Create Authentication
+↓
+SecurityContextHolder
+↓
+Authorization
+↓
+Controller
+↓
+Service
+↓
+Method-level authorization
+↓
+Repository
+
+---
+
+## Authentication vs Authorization
+
+Authentication:
+"Who is this user?"
+
+Authorization:
+"What is this user allowed to do?"
+
+JWT validation establishes the authenticated identity.
+
+Authorities/roles are then used for authorization.
+
+---
+
+## SecurityContext
+
+After successful JWT validation:
+
+SecurityContextHolder
+↓
+SecurityContext
+↓
+Authentication
+↓
+principal + authorities
+
+Example:
+
+principal = uday
+authorities = ROLE_USER
+
+---
+
+## Roles
+
+Application role:
+
+USER
+ADMIN
+
+Spring Security authority representation:
+
+ROLE_USER
+ROLE_ADMIN
+
+hasRole("USER")
+↓
+checks ROLE_USER
+
+hasRole("ADMIN")
+↓
+checks ROLE_ADMIN
+
+---
+
+## URL-level Authorization
+
+Example:
+
+/api/orders/**        → authenticated users
+/api/admin/**         → ADMIN only
+
+---
+
+## Method-level Authorization
+
+Enable:
+
+@EnableMethodSecurity
+
+Then:
+
+@PreAuthorize("hasRole('ADMIN')")
+
+can protect a service/controller method.
+
+Method-level authorization is useful for enforcing security
+close to business operations.
+
+---
+
+## 401 vs 403
+
+No/invalid authentication:
+→ 401 Unauthorized
+
+Authenticated but insufficient authority:
+→ 403 Forbidden
+
+---
+
+## Current Experiment
+
+USER:
+GET /api/orders → allowed
+
+USER:
+DELETE /api/orders/{id} → forbidden
+
+ADMIN:
+DELETE /api/orders/{id} → allowed
+
+---
+
+## Status
+
+9.10 COMPLETE
+9.11 COMPLETE
+9.12 COMPLETE

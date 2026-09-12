@@ -1,10 +1,9 @@
 package com.interviewlab.service.implementation;
 
 import com.interviewlab.service.JwtService;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -44,4 +43,32 @@ public class JwtServiceImp implements JwtService {
                 .signWith(secretKey)
                 .compact();
     }
+
+    @Override
+    public boolean isTokenValid(String token)
+    {
+        try{
+            Claims claims = extractAllClaims(token);
+
+            return claims.getSubject()!= null && claims.getExpiration().after(new Date());
+        }catch(Exception ex){
+            return false;
+        }
+    }
+
+    private Claims extractAllClaims(String token)
+    {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    @Override
+    public String extractUsername(String token)
+    {
+        return extractAllClaims(token).getSubject();
+    }
+
 }
